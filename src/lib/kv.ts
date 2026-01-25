@@ -50,3 +50,49 @@ export async function deleteUserNotificationDetails(
     localStore.delete(key);
   }
 }
+
+/*//////////////////////////////////////////////////////////////
+                      CAST HASH MAPPING
+//////////////////////////////////////////////////////////////*/
+
+// In-memory fallback for castHash mapping
+const castHashStore = new Map<string, CastMapping>();
+
+export interface CastMapping {
+  castHash: string;
+  authorFid: number;
+  createdAt: number;
+}
+
+function getCastMappingKey(postId: string): string {
+  return `${APP_NAME}:cast:${postId}`;
+}
+
+/**
+ * Store the mapping from postId to castHash.
+ * Called when a market is created.
+ */
+export async function setCastMapping(
+  postId: string,
+  data: CastMapping
+): Promise<void> {
+  const key = getCastMappingKey(postId);
+  if (redis) {
+    await redis.set(key, data);
+  } else {
+    castHashStore.set(key, data);
+  }
+}
+
+/**
+ * Retrieve castHash by postId.
+ */
+export async function getCastMapping(
+  postId: string
+): Promise<CastMapping | null> {
+  const key = getCastMappingKey(postId);
+  if (redis) {
+    return await redis.get<CastMapping>(key);
+  }
+  return castHashStore.get(key) || null;
+}

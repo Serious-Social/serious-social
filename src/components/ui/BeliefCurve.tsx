@@ -1,0 +1,151 @@
+/**
+ * BeliefCurve - Visual representation of support vs oppose signal.
+ *
+ * Design constraints from UX spec:
+ * - Muted palette (no green/red)
+ * - Minimalist, disclosure-style aesthetic
+ * - Never framed as "winning"
+ */
+import { MarketState, formatBelief, formatUSDC, getMarketStatus } from '~/lib/contracts';
+
+interface BeliefCurveProps {
+  state: MarketState | null;
+  size?: 'compact' | 'full';
+}
+
+export function BeliefCurve({ state, size = 'full' }: BeliefCurveProps) {
+  if (!state) {
+    return (
+      <div className="text-center text-gray-500 py-8">
+        No market data available
+      </div>
+    );
+  }
+
+  const beliefPercent = formatBelief(state.belief);
+  const opposePercent = 100 - beliefPercent;
+  const status = getMarketStatus(state);
+  const totalPrincipal = state.supportPrincipal + state.opposePrincipal;
+
+  if (size === 'compact') {
+    return (
+      <div className="space-y-2">
+        {/* Status badge */}
+        <StatusBadge status={status} />
+
+        {/* Simple bar */}
+        <div className="h-3 bg-gray-200 rounded-full overflow-hidden flex">
+          <div
+            className="bg-slate-600 transition-all duration-500"
+            style={{ width: `${beliefPercent}%` }}
+          />
+          <div
+            className="bg-slate-300 transition-all duration-500"
+            style={{ width: `${opposePercent}%` }}
+          />
+        </div>
+
+        {/* Labels */}
+        <div className="flex justify-between text-xs text-gray-600">
+          <span>Support {beliefPercent.toFixed(0)}%</span>
+          <span>Challenge {opposePercent.toFixed(0)}%</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Status badge */}
+      <div className="flex justify-center">
+        <StatusBadge status={status} />
+      </div>
+
+      {/* Main belief bar */}
+      <div className="space-y-2">
+        <div className="h-6 bg-gray-200 rounded-lg overflow-hidden flex">
+          <div
+            className="bg-slate-600 transition-all duration-500 flex items-center justify-end pr-2"
+            style={{ width: `${Math.max(beliefPercent, 10)}%` }}
+          >
+            {beliefPercent >= 20 && (
+              <span className="text-white text-sm font-medium">{beliefPercent.toFixed(0)}%</span>
+            )}
+          </div>
+          <div
+            className="bg-slate-300 transition-all duration-500 flex items-center justify-start pl-2"
+            style={{ width: `${Math.max(opposePercent, 10)}%` }}
+          >
+            {opposePercent >= 20 && (
+              <span className="text-slate-700 text-sm font-medium">{opposePercent.toFixed(0)}%</span>
+            )}
+          </div>
+        </div>
+
+        {/* Side labels */}
+        <div className="flex justify-between text-sm text-gray-600">
+          <span>Support</span>
+          <span>Challenge</span>
+        </div>
+      </div>
+
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 gap-4 pt-2">
+        <StatCard
+          label="Support Capital"
+          value={`$${formatUSDC(state.supportPrincipal)}`}
+        />
+        <StatCard
+          label="Challenge Capital"
+          value={`$${formatUSDC(state.opposePrincipal)}`}
+        />
+        <StatCard
+          label="Total Committed"
+          value={`$${formatUSDC(totalPrincipal)}`}
+        />
+        <StatCard
+          label="Reward Pool"
+          value={`$${formatUSDC(state.srpBalance)}`}
+        />
+      </div>
+
+      {/* Explanatory note for unchallenged state */}
+      {status === 'unchallenged' && (
+        <p className="text-sm text-gray-500 text-center italic">
+          No counter-signal yet
+        </p>
+      )}
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: 'no_market' | 'unchallenged' | 'contested' }) {
+  const styles = {
+    no_market: 'bg-gray-100 text-gray-600',
+    unchallenged: 'bg-amber-50 text-amber-700 border border-amber-200',
+    contested: 'bg-slate-100 text-slate-700 border border-slate-200',
+  };
+
+  const labels = {
+    no_market: 'No Market',
+    unchallenged: 'Unchallenged',
+    contested: 'Contested',
+  };
+
+  return (
+    <span className={`px-3 py-1 rounded-full text-sm font-medium ${styles[status]}`}>
+      {labels[status]}
+    </span>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-gray-50 rounded-lg p-3 text-center">
+      <div className="text-lg font-semibold text-gray-900">{value}</div>
+      <div className="text-xs text-gray-500">{label}</div>
+    </div>
+  );
+}
+
+export default BeliefCurve;
