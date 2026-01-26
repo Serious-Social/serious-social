@@ -101,7 +101,7 @@ export function useFarcasterTransaction() {
         from: from as `0x${string}`,
         to: params.to,
         data: params.data,
-        value: params.value ? `0x${params.value.toString(16)}` : undefined,
+        value: params.value ? `0x${params.value.toString(16)}` as `0x${string}` : undefined,
       };
       console.log('[useFarcasterTransaction] TX params:', txParams);
 
