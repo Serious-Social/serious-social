@@ -9,6 +9,7 @@ import { baseSepolia } from 'viem/chains';
 import {
   CONTRACTS,
   BELIEF_FACTORY_ABI,
+  BELIEF_MARKET_ABI,
   ERC20_ABI,
   DEFAULT_CHAIN_ID,
 } from '~/lib/contracts';
@@ -192,6 +193,66 @@ export function useFarcasterCreateMarket() {
 
   return {
     createMarket,
+    hash,
+    isPending,
+    isConfirming,
+    isSuccess,
+    error,
+    reset,
+  };
+}
+
+/**
+ * Hook to withdraw from a position using the Farcaster SDK provider.
+ */
+export function useFarcasterWithdraw() {
+  const { sendTransaction, hash, isPending, isConfirming, isSuccess, error, reset } = useFarcasterTransaction();
+
+  const withdraw = useCallback(async (marketAddress: `0x${string}`, positionId: bigint) => {
+    const data = encodeFunctionData({
+      abi: BELIEF_MARKET_ABI,
+      functionName: 'withdraw',
+      args: [positionId],
+    });
+
+    return sendTransaction({
+      to: marketAddress,
+      data,
+    });
+  }, [sendTransaction]);
+
+  return {
+    withdraw,
+    hash,
+    isPending,
+    isConfirming,
+    isSuccess,
+    error,
+    reset,
+  };
+}
+
+/**
+ * Hook to claim rewards from a position using the Farcaster SDK provider.
+ */
+export function useFarcasterClaimRewards() {
+  const { sendTransaction, hash, isPending, isConfirming, isSuccess, error, reset } = useFarcasterTransaction();
+
+  const claimRewards = useCallback(async (marketAddress: `0x${string}`, positionId: bigint) => {
+    const data = encodeFunctionData({
+      abi: BELIEF_MARKET_ABI,
+      functionName: 'claimRewards',
+      args: [positionId],
+    });
+
+    return sendTransaction({
+      to: marketAddress,
+      data,
+    });
+  }, [sendTransaction]);
+
+  return {
+    claimRewards,
     hash,
     isPending,
     isConfirming,

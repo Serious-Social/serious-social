@@ -1,10 +1,11 @@
 'use client';
 
-import { useBeliefMarket, useUserPositionDetails } from '~/hooks/useBeliefMarket';
+import { useBeliefMarket, useUserPositionDetails, usePendingRewards } from '~/hooks/useBeliefMarket';
+import { useFarcasterWithdraw, useFarcasterClaimRewards } from '~/hooks/useFarcasterTransaction';
 import { BeliefCurve } from '~/components/ui/BeliefCurve';
 import { CommitModal } from '~/components/ui/CommitModal';
 import { ShareButton } from '~/components/ui/Share';
-import { formatUSDC, Side } from '~/lib/contracts';
+import { formatUSDC, Side, Position } from '~/lib/contracts';
 import { useAccount } from 'wagmi';
 import { useState, useEffect } from 'react';
 
@@ -163,9 +164,17 @@ export function MarketView({ postId, intent }: MarketViewProps) {
         {isConnected && positions.length > 0 && (
           <section className="bg-white rounded-xl p-4 shadow-sm">
             <h2 className="text-sm font-medium text-gray-500 mb-3">Your Positions</h2>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {positions.map((pos) => (
-                <PositionCard key={pos.id.toString()} position={pos} />
+                <PositionCard
+                  key={pos.id.toString()}
+                  position={pos}
+                  marketAddress={marketAddress as `0x${string}`}
+                  onAction={() => {
+                    refetch();
+                    refetchPositions();
+                  }}
+                />
               ))}
             </div>
           </section>
@@ -247,29 +256,124 @@ export function MarketView({ postId, intent }: MarketViewProps) {
   );
 }
 
-function PositionCard({ position }: { position: { id: bigint; side: Side; amount: bigint; unlockTimestamp: number; withdrawn: boolean } }) {
+interface PositionCardProps {
+  position: Position & { id: bigint };
+  marketAddress: `0x${string}`;
+  onAction: () => void;
+}
+
+function PositionCard({ position, marketAddress, onAction }: PositionCardProps) {
   const isLocked = Date.now() / 1000 < position.unlockTimestamp;
   const unlockDate = new Date(position.unlockTimestamp * 1000);
+  const canWithdraw = !position.withdrawn && !isLocked;
+
+  // Pending rewards
+  const { data: pendingRewards } = usePendingRewards(marketAddress, position.id);
+
+  // Withdraw hook
+  const {
+    withdraw,
+    isPending: isWithdrawPending,
+    isConfirming: isWithdrawConfirming,
+    error: withdrawError,
+    reset: resetWithdraw,
+  } = useFarcasterWithdraw();
+
+  // Claim rewards hook
+  const {
+    claimRewards,
+    isPending: isClaimPending,
+    isConfirming: isClaimConfirming,
+    error: claimError,
+    reset: resetClaim,
+  } = useFarcasterClaimRewards();
+
+  const handleWithdraw = async () => {
+    try {
+      resetWithdraw();
+      await withdraw(marketAddress, position.id);
+      onAction();
+    } catch (e) {
+      console.error('Withdraw failed:', e);
+    }
+  };
+
+  const handleClaimRewards = async () => {
+    try {
+      resetClaim();
+      await claimRewards(marketAddress, position.id);
+      onAction();
+    } catch (e) {
+      console.error('Claim rewards failed:', e);
+    }
+  };
+
+  const isProcessing = isWithdrawPending || isWithdrawConfirming || isClaimPending || isClaimConfirming;
+  const hasPendingRewards = pendingRewards && pendingRewards > 0n;
 
   return (
-    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-      <div>
-        <span className={`text-sm font-medium ${position.side === Side.Support ? 'text-slate-700' : 'text-slate-500'}`}>
-          {position.side === Side.Support ? 'Support' : 'Challenge'}
-        </span>
-        <span className="text-sm text-gray-600 ml-2">${formatUSDC(position.amount)}</span>
-      </div>
-      <div className="text-right">
-        {position.withdrawn ? (
-          <span className="text-xs text-gray-500">Withdrawn</span>
-        ) : isLocked ? (
-          <span className="text-xs text-amber-600">
-            Unlocks {unlockDate.toLocaleDateString()}
+    <div className="p-3 bg-gray-50 rounded-lg space-y-3">
+      {/* Position info row */}
+      <div className="flex items-center justify-between">
+        <div>
+          <span className={`text-sm font-medium ${position.side === Side.Support ? 'text-slate-700' : 'text-slate-500'}`}>
+            {position.side === Side.Support ? 'Support' : 'Challenge'}
           </span>
-        ) : (
-          <span className="text-xs text-green-600">Unlocked</span>
-        )}
+          <span className="text-sm text-gray-600 ml-2">${formatUSDC(position.amount)}</span>
+        </div>
+        <div className="text-right">
+          {position.withdrawn ? (
+            <span className="text-xs text-gray-500">Withdrawn</span>
+          ) : isLocked ? (
+            <span className="text-xs text-amber-600">
+              Unlocks {unlockDate.toLocaleDateString()}
+            </span>
+          ) : (
+            <span className="text-xs text-green-600">Ready to withdraw</span>
+          )}
+        </div>
       </div>
+
+      {/* Pending rewards */}
+      {hasPendingRewards && !position.withdrawn && (
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-gray-500">
+            Pending rewards: <span className="text-green-600 font-medium">${formatUSDC(pendingRewards)}</span>
+          </span>
+        </div>
+      )}
+
+      {/* Action buttons */}
+      {!position.withdrawn && (canWithdraw || hasPendingRewards) && (
+        <div className="flex gap-2">
+          {canWithdraw && (
+            <button
+              onClick={handleWithdraw}
+              disabled={isProcessing}
+              className="flex-1 py-2 px-3 text-xs font-medium rounded-lg bg-slate-600 text-white hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isWithdrawPending ? 'Confirming...' : isWithdrawConfirming ? 'Processing...' : 'Withdraw'}
+            </button>
+          )}
+          {hasPendingRewards && !position.withdrawn && (
+            <button
+              onClick={handleClaimRewards}
+              disabled={isProcessing}
+              className="flex-1 py-2 px-3 text-xs font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isClaimPending ? 'Confirming...' : isClaimConfirming ? 'Processing...' : 'Claim Rewards'}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Error messages */}
+      {withdrawError && (
+        <p className="text-xs text-red-600">Withdraw failed: {withdrawError.message}</p>
+      )}
+      {claimError && (
+        <p className="text-xs text-red-600">Claim failed: {claimError.message}</p>
+      )}
     </div>
   );
 }
