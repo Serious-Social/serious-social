@@ -3,6 +3,7 @@
 import { useBeliefMarket, useUserPositionDetails } from '~/hooks/useBeliefMarket';
 import { BeliefCurve } from '~/components/ui/BeliefCurve';
 import { CommitModal } from '~/components/ui/CommitModal';
+import { ShareButton } from '~/components/ui/Share';
 import { formatUSDC, Side } from '~/lib/contracts';
 import { useAccount } from 'wagmi';
 import { useState, useEffect } from 'react';
@@ -184,6 +185,20 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           >
             Challenge this claim
           </button>
+        </section>
+
+        {/* Share */}
+        <section>
+          <ShareButton
+            buttonText="Share this market"
+            className="w-full py-4 rounded-xl font-medium transition-colors bg-slate-700 text-white hover:bg-slate-800"
+            cast={{
+              text: castContent
+                ? `"${castContent.text.slice(0, 100)}${castContent.text.length > 100 ? '...' : ''}"\n\nDo you believe this? Put your money where your mouth is.`
+                : "Check out this belief market. Put your money where your mouth is.",
+              embeds: [{ path: `/market/${postId}` }],
+            }}
+          />
         </section>
 
         {/* Rules/Info (collapsible) */}

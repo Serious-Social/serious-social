@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { setCastMapping, getCastMapping, CastMapping } from '~/lib/kv';
+import { setCastMapping, getCastMapping, addRecentMarket, CastMapping } from '~/lib/kv';
 import { isValidPostId } from '~/lib/postId';
 
 /**
@@ -74,6 +74,9 @@ export async function POST(request: NextRequest) {
     };
 
     await setCastMapping(postId, mapping);
+
+    // Add to recent markets list
+    await addRecentMarket(postId);
 
     return NextResponse.json({ success: true, mapping });
   } catch (error) {

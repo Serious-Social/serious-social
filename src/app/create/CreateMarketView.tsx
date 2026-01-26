@@ -18,6 +18,7 @@ import {
   MIN_STAKE_DISPLAY,
   MAX_STAKE_DISPLAY,
 } from '~/lib/contracts';
+import { ShareButton } from '~/components/ui/Share';
 
 interface Cast {
   hash: string;
@@ -529,22 +530,19 @@ export function CreateMarketView() {
             </div>
 
             <div className="space-y-3">
+              <ShareButton
+                buttonText="Share on Farcaster"
+                className="w-full py-3 bg-slate-700 hover:bg-slate-800 rounded-xl text-white font-medium transition-colors"
+                cast={{
+                  text: `I just put $${formatUSDC(amountBigInt)} behind my claim:\n\n"${selectedCast.text.slice(0, 100)}${selectedCast.text.length > 100 ? '...' : ''}"\n\nDo you agree? Support or challenge me.`,
+                  embeds: [{ path: `/market/${postId}` }],
+                }}
+              />
               <button
                 onClick={handleViewMarket}
-                className="w-full py-3 bg-slate-700 hover:bg-slate-800 rounded-xl text-white font-medium transition-colors"
-              >
-                View Market
-              </button>
-              <button
-                onClick={() => {
-                  const url = typeof window !== 'undefined'
-                    ? `${window.location.origin}/market/${postId}`
-                    : `/market/${postId}`;
-                  navigator.clipboard.writeText(url);
-                }}
                 className="w-full py-3 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-700 font-medium transition-colors"
               >
-                Copy Share URL
+                View Market
               </button>
             </div>
           </div>

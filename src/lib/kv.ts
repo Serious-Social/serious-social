@@ -96,3 +96,42 @@ export async function getCastMapping(
   }
   return castHashStore.get(key) || null;
 }
+
+/*//////////////////////////////////////////////////////////////
+                      RECENT MARKETS
+//////////////////////////////////////////////////////////////*/
+
+const RECENT_MARKETS_KEY = `${APP_NAME}:recent_markets`;
+const MAX_RECENT_MARKETS = 50;
+
+// In-memory fallback for recent markets
+const recentMarketsStore: string[] = [];
+
+/**
+ * Add a market to the recent markets list.
+ * Called when a market is created.
+ */
+export async function addRecentMarket(postId: string): Promise<void> {
+  if (redis) {
+    // Add to the front of the list
+    await redis.lpush(RECENT_MARKETS_KEY, postId);
+    // Trim to keep only the most recent
+    await redis.ltrim(RECENT_MARKETS_KEY, 0, MAX_RECENT_MARKETS - 1);
+  } else {
+    // In-memory fallback
+    recentMarketsStore.unshift(postId);
+    if (recentMarketsStore.length > MAX_RECENT_MARKETS) {
+      recentMarketsStore.pop();
+    }
+  }
+}
+
+/**
+ * Get the list of recent market postIds.
+ */
+export async function getRecentMarkets(limit: number = 10): Promise<string[]> {
+  if (redis) {
+    return await redis.lrange(RECENT_MARKETS_KEY, 0, limit - 1);
+  }
+  return recentMarketsStore.slice(0, limit);
+}
