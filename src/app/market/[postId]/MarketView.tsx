@@ -249,6 +249,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           onClose={() => setIsModalOpen(false)}
           side={modalSide}
           marketAddress={marketAddress as `0x${string}`}
+          postId={postId}
           onSuccess={handleCommitSuccess}
         />
       )}

@@ -10,13 +10,14 @@ interface CommitModalProps {
   onClose: () => void;
   side: Side;
   marketAddress: `0x${string}`;
+  postId: string;
   onSuccess?: () => void;
 }
 
 type Step = 'input' | 'approve' | 'commit' | 'success';
 
-export function CommitModal({ isOpen, onClose, side, marketAddress, onSuccess }: CommitModalProps) {
-  const { isConnected, chain } = useAccount();
+export function CommitModal({ isOpen, onClose, side, marketAddress, postId, onSuccess }: CommitModalProps) {
+  const { isConnected, chain, address } = useAccount();
   const { connectors, connect } = useConnect();
   const { switchChain } = useSwitchChain();
 
@@ -55,12 +56,24 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, onSuccess }:
     }
   }, [isApproveSuccess, step, refetchAllowance, resetApprove]);
 
-  // Handle commit success -> move to success step
+  // Handle commit success -> move to success step and send notification
   useEffect(() => {
     if (isCommitSuccess && step === 'commit') {
       setStep('success');
+
+      // Send notification to claim author (fire and forget)
+      const notifyType = side === Side.Support ? 'support' : 'challenge';
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: notifyType,
+          postId,
+          amount: formatUSDC(amountBigInt),
+        }),
+      }).catch((err) => console.error('Failed to send notification:', err));
     }
-  }, [isCommitSuccess, step]);
+  }, [isCommitSuccess, step, side, postId, amountBigInt]);
 
   // Reset state when modal closes
   useEffect(() => {
