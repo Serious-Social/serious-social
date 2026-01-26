@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
           <h1 tw="text-6xl text-white">Invalid Market</h1>
         </div>
       ),
-      { width: 1200, height: 630 }
+      { width: 1200, height: 800 }
     );
   }
 
@@ -111,26 +111,27 @@ export async function GET(request: NextRequest) {
     return (Number(amount) / 1_000_000).toFixed(0);
   };
 
+  // Use 3:2 aspect ratio for Mini App embeds (1200x800)
   return new ImageResponse(
     (
       <div tw="flex h-full w-full flex-col bg-slate-50">
-        {/* Header */}
-        <div tw="flex items-center justify-between px-12 py-6 bg-white border-b border-slate-200">
+        {/* Header - more padding */}
+        <div tw="flex items-center justify-between px-16 py-8 bg-white border-b border-slate-200">
           <div tw="flex items-center">
-            <div tw="text-3xl font-bold text-slate-800">Serious</div>
+            <div tw="text-3xl font-bold text-slate-800">Serious Social</div>
           </div>
           <div tw="text-xl text-slate-500">Belief Market</div>
         </div>
 
-        {/* Content */}
-        <div tw="flex flex-1 flex-col px-12 py-8">
+        {/* Content - more padding */}
+        <div tw="flex flex-1 flex-col px-16 py-10">
           {/* Author */}
           {authorName && (
-            <div tw="flex items-center mb-4">
+            <div tw="flex items-center mb-6">
               {authorPfp && (
                 <img
                   src={authorPfp}
-                  tw="w-12 h-12 rounded-full mr-3"
+                  tw="w-14 h-14 rounded-full mr-4"
                   alt=""
                 />
               )}
@@ -140,13 +141,13 @@ export async function GET(request: NextRequest) {
 
           {/* Claim text */}
           <div tw="flex flex-1 items-center">
-            <p tw="text-4xl text-slate-900 leading-tight">{displayText}</p>
+            <p tw="text-4xl text-slate-900 leading-snug">{displayText}</p>
           </div>
 
           {/* Belief signal bar */}
           {marketExists && (
-            <div tw="flex flex-col mt-8">
-              <div tw="flex justify-between mb-2">
+            <div tw="flex flex-col mt-10">
+              <div tw="flex justify-between mb-3">
                 <span tw="text-xl text-slate-600">
                   Support: ${formatUSDC(supportPool)} ({supportPercent}%)
                 </span>
@@ -168,21 +169,21 @@ export async function GET(request: NextRequest) {
           )}
 
           {!marketExists && (
-            <div tw="flex mt-8 px-6 py-4 bg-amber-100 rounded-xl">
+            <div tw="flex mt-10 px-6 py-4 bg-amber-100 rounded-xl">
               <span tw="text-xl text-amber-800">Market not yet created</span>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div tw="flex items-center justify-center px-12 py-4 bg-slate-100 border-t border-slate-200">
+        <div tw="flex items-center justify-center px-16 py-6 bg-slate-100 border-t border-slate-200">
           <span tw="text-lg text-slate-500">Put your money where your mouth is</span>
         </div>
       </div>
     ),
     {
       width: 1200,
-      height: 630,
+      height: 800,
     }
   );
 }
