@@ -4,6 +4,7 @@ import { isValidPostId } from '~/lib/postId';
 import { APP_NAME, APP_URL } from '~/lib/constants';
 import { getCastMapping } from '~/lib/kv';
 import { getNeynarClient } from '~/lib/neynar';
+import { getMiniAppEmbedMetadata } from '~/lib/utils';
 
 interface PageProps {
   params: Promise<{ postId: string }>;
@@ -31,9 +32,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         description = response.cast.text.slice(0, 150) + (response.cast.text.length > 150 ? '...' : '');
       }
     }
-  } catch (e) {
+  } catch (_e) {
     // Ignore errors, use default description
   }
+
+  // Mini App embed metadata with custom button that launches to this market
+  const frameMetadata = getMiniAppEmbedMetadata({
+    ogImageUrl,
+    buttonText: 'Support or Challenge',
+    launchUrl: marketUrl,
+    title: `Belief Market | ${APP_NAME}`,
+    description,
+  });
 
   return {
     title: `Market | ${APP_NAME}`,
@@ -56,17 +66,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       images: [ogImageUrl],
     },
-    // Farcaster Frame metadata
+    // Farcaster Mini App embed metadata
     other: {
-      'fc:frame': 'vNext',
-      'fc:frame:image': ogImageUrl,
-      'fc:frame:image:aspect_ratio': '1.91:1',
-      'fc:frame:button:1': 'Support',
-      'fc:frame:button:1:action': 'link',
-      'fc:frame:button:1:target': `${marketUrl}?intent=support`,
-      'fc:frame:button:2': 'Challenge',
-      'fc:frame:button:2:action': 'link',
-      'fc:frame:button:2:target': `${marketUrl}?intent=challenge`,
+      'fc:frame': JSON.stringify(frameMetadata),
     },
   };
 }
