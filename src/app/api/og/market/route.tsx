@@ -149,11 +149,18 @@ export async function GET(request: NextRequest) {
           {/* Belief signal bar */}
           {marketExists && (
             <div tw="flex flex-col mt-10">
+              {opposePool === 0n && supportPool > 0n && (
+                <div tw="flex mb-4">
+                  <span tw="text-lg text-amber-700 bg-amber-100 px-4 py-2 rounded-full font-medium">
+                    Unchallenged
+                  </span>
+                </div>
+              )}
               <div tw="flex justify-between mb-3">
-                <span tw="text-xl text-slate-600">
+                <span tw="text-2xl font-medium text-slate-700">
                   Support: ${formatUSDC(supportPool)} ({supportPercent}%)
                 </span>
-                <span tw="text-xl text-slate-600">
+                <span tw="text-2xl font-medium text-slate-700">
                   Challenge: ${formatUSDC(opposePool)} ({opposePercent}%)
                 </span>
               </div>
@@ -179,7 +186,7 @@ export async function GET(request: NextRequest) {
 
         {/* Footer */}
         <div tw="flex items-center justify-center px-16 py-6 bg-slate-100 border-t border-slate-200">
-          <span tw="text-lg text-slate-500">Put your money where your mouth is</span>
+          <span tw="text-2xl text-slate-500 font-medium">Put your money where your mouth is</span>
         </div>
       </div>
     ),

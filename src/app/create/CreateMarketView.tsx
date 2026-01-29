@@ -543,7 +543,7 @@ export function CreateMarketView() {
                 buttonText="Share on Farcaster"
                 className="w-full py-3 bg-slate-700 hover:bg-slate-800 rounded-xl text-white font-medium transition-colors"
                 cast={{
-                  text: `I just put $${formatUSDC(amountBigInt)} behind my claim:\n\n"${selectedCast.text.slice(0, 100)}${selectedCast.text.length > 100 ? '...' : ''}"\n\nDo you agree? Support or challenge me.`,
+                  text: `I just put $${formatUSDC(amountBigInt)} behind my claim:\n\n"${selectedCast.text.slice(0, 100)}${selectedCast.text.length > 100 ? '...' : ''}"\n\nDo you agree? Commit to your stance.`,
                   embeds: [{ path: `/market/${postId}` }],
                 }}
               />
