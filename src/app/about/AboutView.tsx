@@ -47,8 +47,9 @@ export function AboutView() {
             <strong>Stake USDC</strong> to support or challenge a claim.
           </li>
           <li>
-            Principal is <strong>locked for 30 days</strong>. After the lock
-            period, it becomes withdrawable.
+            Principal is <strong>committed for 30 days</strong>. You can
+            withdraw early with a <strong>5% penalty</strong> (added to the
+            reward pool), or wait for the full period to withdraw penalty-free.
           </li>
           <li>
             Signal is <strong>time-weighted</strong> &mdash; it grows the longer
@@ -87,8 +88,8 @@ export function AboutView() {
             gambling.
           </li>
           <li>
-            <strong>Patience is rewarded</strong> &mdash; Early exits earn
-            little. Flash moves are dampened.
+            <strong>Patience is rewarded</strong> &mdash; Early exits incur
+            a 5% penalty and forfeit pending rewards. Flash moves are dampened.
           </li>
           <li>
             <strong>Explicit safety rails</strong> &mdash; Caps on rewards, no

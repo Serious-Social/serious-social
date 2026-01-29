@@ -9,8 +9,8 @@ export const CONTRACTS = {
     usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as `0x${string}`, // USDC on Base
   },
   [baseSepolia.id]: {
-    factory: '0x1541Fd8CA1D928C993544340048240950F65eeaE' as `0x${string}`,
-    usdc: '0xe989C81c3bD0FF878b39F00544697B956c09ee55' as `0x${string}`, // Mock USDC on Base Sepolia
+    factory: '0x44572A5De82D591701cCfb85EEd81060d648F781' as `0x${string}`,
+    usdc: '0x1126cD7D544979B70b8E75a993Ed89f00BfB165B' as `0x${string}`, // Mock USDC on Base Sepolia
   },
 } as const;
 
@@ -99,12 +99,12 @@ export const BELIEF_MARKET_ABI = [
         components: [
           { name: 'lockPeriod', type: 'uint32' },
           { name: 'minRewardDuration', type: 'uint32' },
-          { name: 'maxSrpBps', type: 'uint16' },
           { name: 'maxUserRewardBps', type: 'uint16' },
           { name: 'lateEntryFeeBaseBps', type: 'uint16' },
           { name: 'lateEntryFeeMaxBps', type: 'uint16' },
           { name: 'lateEntryFeeScale', type: 'uint64' },
           { name: 'authorPremiumBps', type: 'uint16' },
+          { name: 'earlyWithdrawPenaltyBps', type: 'uint16' },
           { name: 'yieldBearingEscrow', type: 'bool' },
           { name: 'minStake', type: 'uint64' },
           { name: 'maxStake', type: 'uint64' },
@@ -202,6 +202,16 @@ export const BELIEF_MARKET_ABI = [
       { name: 'positionId', type: 'uint256', indexed: true },
       { name: 'user', type: 'address', indexed: true },
       { name: 'amount', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'EarlyWithdrawn',
+    inputs: [
+      { name: 'positionId', type: 'uint256', indexed: true },
+      { name: 'user', type: 'address', indexed: true },
+      { name: 'returnAmount', type: 'uint256', indexed: false },
+      { name: 'penalty', type: 'uint256', indexed: false },
     ],
   },
   {

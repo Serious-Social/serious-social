@@ -200,8 +200,8 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, onSu
               <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-600">
                 <p>
                   {side === Side.Support
-                    ? 'By supporting, you signal that you believe this claim. Your capital will be locked for 30 days.'
-                    : 'By challenging, you signal measured disagreement. Your capital will be locked for 30 days.'}
+                    ? 'By supporting, you signal that you believe this claim. Your capital is committed for 30 days. Early withdrawal incurs a 5% penalty.'
+                    : 'By challenging, you signal measured disagreement. Your capital is committed for 30 days. Early withdrawal incurs a 5% penalty.'}
                 </p>
               </div>
 

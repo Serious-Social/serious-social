@@ -391,7 +391,7 @@ export function CreateMarketView() {
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-700 space-y-2">
                   <p><strong>By creating this market:</strong></p>
                   <ul className="list-disc list-inside space-y-1 text-slate-600">
-                    <li>Your USDC is locked for 30 days</li>
+                    <li>Your USDC is committed for 30 days (5% early withdrawal penalty)</li>
                     <li>A 2% author premium funds the reward pool</li>
                     <li>Others can support or challenge your claim</li>
                   </ul>

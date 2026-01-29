@@ -255,18 +255,23 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           <div className="px-4 pb-4 text-sm text-gray-600 space-y-2">
             <p>
               <strong>Supporting</strong> a claim means staking USDC to signal that you believe it.
-              Your capital is locked for a period (typically 30 days).
+              Your capital is committed for 30 days.
             </p>
             <p>
               <strong>Challenging</strong> means staking against the claim. This creates measured
               disagreement and improves signal clarity.
             </p>
             <p>
-              <strong>Time matters.</strong> The longer your capital stays committed, the more it
-              contributes to the belief signal. Early exits earn minimal rewards.
+              <strong>Early withdrawal.</strong> You can withdraw before the lock period ends,
+              but a 5% penalty is deducted and added to the reward pool. Early exits also
+              forfeit any pending rewards.
             </p>
             <p>
-              <strong>No one wins or loses.</strong> Your principal is returned after the lock
+              <strong>Time matters.</strong> The longer your capital stays committed, the more it
+              contributes to the belief signal and the more rewards you earn.
+            </p>
+            <p>
+              <strong>No one wins or loses.</strong> Your principal is returned after the commitment
               period. Rewards come from a shared pool, not from other participants.
             </p>
           </div>
@@ -303,7 +308,7 @@ interface PositionCardProps {
 function PositionCard({ position, marketAddress, onAction }: PositionCardProps) {
   const isLocked = Date.now() / 1000 < position.unlockTimestamp;
   const unlockDate = new Date(position.unlockTimestamp * 1000);
-  const canWithdraw = !position.withdrawn && !isLocked;
+  const canWithdraw = !position.withdrawn;
 
   // Pending rewards
   const { data: pendingRewards } = usePendingRewards(marketAddress, position.id);
@@ -364,7 +369,7 @@ function PositionCard({ position, marketAddress, onAction }: PositionCardProps) 
             <span className="text-xs text-gray-500">Withdrawn</span>
           ) : isLocked ? (
             <span className="text-xs text-amber-600">
-              Unlocks {unlockDate.toLocaleDateString()}
+              Unlocks {unlockDate.toLocaleDateString()} (early exit: 5% penalty)
             </span>
           ) : (
             <span className="text-xs text-green-600">Ready to withdraw</span>
@@ -388,9 +393,13 @@ function PositionCard({ position, marketAddress, onAction }: PositionCardProps) 
             <button
               onClick={handleWithdraw}
               disabled={isProcessing}
-              className="flex-1 py-2 px-3 text-xs font-medium rounded-lg bg-slate-600 text-white hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className={`flex-1 py-2 px-3 text-xs font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+                isLocked
+                  ? 'bg-amber-500 text-white hover:bg-amber-600'
+                  : 'bg-slate-600 text-white hover:bg-slate-700'
+              }`}
             >
-              {isWithdrawPending ? 'Confirming...' : isWithdrawConfirming ? 'Processing...' : 'Withdraw'}
+              {isWithdrawPending ? 'Confirming...' : isWithdrawConfirming ? 'Processing...' : isLocked ? 'Withdraw (5% penalty)' : 'Withdraw'}
             </button>
           )}
           {hasPendingRewards && !position.withdrawn && (
