@@ -8,7 +8,7 @@ import { CommitModal } from '~/components/ui/CommitModal';
 import { ShareButton } from '~/components/ui/Share';
 import { formatUSDC, Side, Position } from '~/lib/contracts';
 import { useAccount } from 'wagmi';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface CastContent {
   text: string;
@@ -34,6 +34,9 @@ export function MarketView({ postId, intent }: MarketViewProps) {
   // Cast content state
   const [castContent, setCastContent] = useState<CastContent | null>(null);
   const [contentLoading, setContentLoading] = useState(true);
+
+  // Refs
+  const howItWorksRef = useRef<HTMLDetailsElement>(null);
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -182,7 +185,16 @@ export function MarketView({ postId, intent }: MarketViewProps) {
         {/* Belief curve */}
         <section className="bg-white rounded-xl p-4 shadow-sm">
           <h2 className="text-sm font-medium text-gray-500 mb-4">Belief Signal</h2>
-          <BeliefCurve state={state ?? null} />
+          <BeliefCurve
+            state={state ?? null}
+            onInfoClick={() => {
+              const el = howItWorksRef.current;
+              if (el) {
+                el.open = true;
+                el.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+          />
         </section>
 
         {/* User's positions */}
@@ -236,7 +248,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
         </section>
 
         {/* Rules/Info (collapsible) */}
-        <details className="bg-white rounded-xl shadow-sm">
+        <details id="how-it-works" ref={howItWorksRef} className="bg-white rounded-xl shadow-sm">
           <summary className="px-4 py-3 cursor-pointer text-sm font-medium text-gray-700">
             How it works
           </summary>

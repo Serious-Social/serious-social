@@ -11,9 +11,19 @@ import { MarketState, formatBelief, formatUSDC, getMarketStatus } from '~/lib/co
 interface BeliefCurveProps {
   state: MarketState | null;
   size?: 'compact' | 'full';
+  onInfoClick?: () => void;
 }
 
-export function BeliefCurve({ state, size = 'full' }: BeliefCurveProps) {
+/** Format micro-USDC·s weight to abbreviated USDC·s (K/M/B) */
+function formatWeight(weight: bigint): string {
+  const value = Number(weight) / 1e6;
+  if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
+  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
+  if (value >= 1e3) return `${(value / 1e3).toFixed(1)}K`;
+  return value.toFixed(1);
+}
+
+export function BeliefCurve({ state, size = 'full', onInfoClick }: BeliefCurveProps) {
   if (!state) {
     return (
       <div className="text-center text-gray-500 py-8">
@@ -87,10 +97,30 @@ export function BeliefCurve({ state, size = 'full' }: BeliefCurveProps) {
           <span>Support</span>
           <span>Challenge</span>
         </div>
+
+        {/* How does this work link */}
+        {onInfoClick && (
+          <div className="text-center">
+            <button
+              onClick={onInfoClick}
+              className="text-sm text-slate-500 hover:text-slate-700 underline underline-offset-2"
+            >
+              How does this work?
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-4 pt-2">
+        <StatCard
+          label="Support Signal"
+          value={formatWeight(state.supportWeight)}
+        />
+        <StatCard
+          label="Challenge Signal"
+          value={formatWeight(state.opposeWeight)}
+        />
         <StatCard
           label="Support Capital"
           value={`$${formatUSDC(state.supportPrincipal)}`}
@@ -133,7 +163,7 @@ function StatusBadge({ status }: { status: 'no_market' | 'unchallenged' | 'conte
   };
 
   return (
-    <span className={`px-3 py-1 rounded-full text-sm font-medium ${styles[status]}`}>
+    <span className={`px-4 py-1.5 rounded-full text-base font-medium ${styles[status]}`}>
       {labels[status]}
     </span>
   );
