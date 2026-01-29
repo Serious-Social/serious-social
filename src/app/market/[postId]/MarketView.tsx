@@ -151,9 +151,6 @@ export function MarketView({ postId, intent }: MarketViewProps) {
         Back to Home
       </Link>
 
-      {/* Title */}
-      <h1 className="text-xl font-semibold text-center text-gray-900 mb-6">Belief Market</h1>
-
       <div className="space-y-4">
         {/* Cast content */}
         <section className="bg-white rounded-xl p-4 shadow-sm">
@@ -338,7 +335,7 @@ function PositionCard({ position, marketAddress, onAction }: PositionCardProps) 
   };
 
   const isProcessing = isWithdrawPending || isWithdrawConfirming || isClaimPending || isClaimConfirming;
-  const hasPendingRewards = pendingRewards && pendingRewards > 0n;
+  const hasPendingRewards = !!pendingRewards && pendingRewards > 0n;
 
   return (
     <div className="p-3 bg-gray-50 rounded-lg space-y-3">
