@@ -309,6 +309,7 @@ function PositionCard({ position, marketAddress, onAction }: PositionCardProps) 
   const isLocked = Date.now() / 1000 < position.unlockTimestamp;
   const unlockDate = new Date(position.unlockTimestamp * 1000);
   const canWithdraw = !position.withdrawn;
+  const [showPenaltyConfirm, setShowPenaltyConfirm] = useState(false);
 
   // Pending rewards
   const { data: pendingRewards } = usePendingRewards(marketAddress, position.id);
@@ -335,6 +336,7 @@ function PositionCard({ position, marketAddress, onAction }: PositionCardProps) 
     try {
       resetWithdraw();
       await withdraw(marketAddress, position.id);
+      setShowPenaltyConfirm(false);
       onAction();
     } catch (e) {
       console.error('Withdraw failed:', e);
@@ -369,7 +371,7 @@ function PositionCard({ position, marketAddress, onAction }: PositionCardProps) 
             <span className="text-xs text-gray-500">Withdrawn</span>
           ) : isLocked ? (
             <span className="text-xs text-amber-600">
-              Unlocks {unlockDate.toLocaleDateString()} (early exit: 5% penalty)
+              Unlocks {unlockDate.toLocaleDateString()}
             </span>
           ) : (
             <span className="text-xs text-green-600">Ready to withdraw</span>
@@ -386,12 +388,37 @@ function PositionCard({ position, marketAddress, onAction }: PositionCardProps) 
         </div>
       )}
 
+      {/* Early withdrawal confirmation */}
+      {showPenaltyConfirm && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
+          <p className="text-xs text-amber-800">
+            Withdrawing early incurs a <strong>5% penalty</strong> on your principal and forfeits pending rewards.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={handleWithdraw}
+              disabled={isProcessing}
+              className="flex-1 py-2 px-3 text-xs font-medium rounded-lg bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isWithdrawPending ? 'Confirming...' : isWithdrawConfirming ? 'Processing...' : 'Confirm withdraw'}
+            </button>
+            <button
+              onClick={() => setShowPenaltyConfirm(false)}
+              disabled={isProcessing}
+              className="flex-1 py-2 px-3 text-xs font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Action buttons */}
-      {!position.withdrawn && (canWithdraw || hasPendingRewards) && (
+      {!position.withdrawn && !showPenaltyConfirm && (canWithdraw || hasPendingRewards) && (
         <div className="flex gap-2">
           {canWithdraw && (
             <button
-              onClick={handleWithdraw}
+              onClick={isLocked ? () => setShowPenaltyConfirm(true) : handleWithdraw}
               disabled={isProcessing}
               className={`flex-1 py-2 px-3 text-xs font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
                 isLocked
@@ -399,7 +426,7 @@ function PositionCard({ position, marketAddress, onAction }: PositionCardProps) 
                   : 'bg-slate-600 text-white hover:bg-slate-700'
               }`}
             >
-              {isWithdrawPending ? 'Confirming...' : isWithdrawConfirming ? 'Processing...' : isLocked ? 'Withdraw (5% penalty)' : 'Withdraw'}
+              {isWithdrawPending ? 'Confirming...' : isWithdrawConfirming ? 'Processing...' : isLocked ? 'Withdraw early' : 'Withdraw'}
             </button>
           )}
           {hasPendingRewards && !position.withdrawn && (
