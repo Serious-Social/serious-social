@@ -10,6 +10,7 @@ import {
   BELIEF_MARKET_ABI,
   DEFAULT_CHAIN_ID,
 } from "~/lib/contracts";
+import { APP_URL } from "~/lib/constants";
 
 export const dynamic = 'force-dynamic';
 
@@ -115,9 +116,10 @@ export async function GET(request: NextRequest) {
   return new ImageResponse(
     (
       <div tw="flex h-full w-full flex-col bg-slate-50">
-        {/* Header - more padding */}
-        <div tw="flex items-center justify-between px-16 py-8 bg-white border-b border-slate-200">
+        {/* Header */}
+        <div tw="flex items-center justify-between px-16 py-6 bg-white border-b border-slate-200">
           <div tw="flex items-center">
+            <img src={`${APP_URL}/logo.png`} width={48} height={34} tw="mr-3" />
             <div tw="text-3xl font-bold text-slate-800">Serious Social</div>
           </div>
           <div tw="text-xl text-slate-500">Belief Market</div>
