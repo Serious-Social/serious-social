@@ -9,6 +9,7 @@ import { getNeynarClient } from '~/lib/neynar';
 export async function GET(request: NextRequest) {
   const fid = request.nextUrl.searchParams.get('fid');
   const hash = request.nextUrl.searchParams.get('hash');
+  const cursor = request.nextUrl.searchParams.get('cursor');
 
   // If hash is provided, fetch a specific cast
   if (hash) {
@@ -36,6 +37,7 @@ export async function GET(request: NextRequest) {
     const response = await client.fetchCastsForUser({
       fid: fidNum,
       limit: 25,
+      ...(cursor ? { cursor } : {}),
     });
 
     // Filter to only include top-level casts (no parent_hash means it's not a reply)
@@ -59,7 +61,10 @@ export async function GET(request: NextRequest) {
       replies: cast.replies?.count ?? 0,
     }));
 
-    return NextResponse.json({ casts });
+    return NextResponse.json({
+      casts,
+      nextCursor: response.next?.cursor ?? null,
+    });
   } catch (error) {
     console.error('Error fetching casts:', error);
     return NextResponse.json(

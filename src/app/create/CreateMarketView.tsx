@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAccount, useConnect, useSwitchChain } from 'wagmi';
@@ -50,7 +50,10 @@ export function CreateMarketView() {
   // State
   const [casts, setCasts] = useState<Cast[]>([]);
   const [castsLoading, setCastsLoading] = useState(false);
+  const [castsLoadingMore, setCastsLoadingMore] = useState(false);
   const [castsError, setCastsError] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   const [selectedCast, setSelectedCast] = useState<Cast | null>(null);
   const [amount, setAmount] = useState('10');
   const [step, setStep] = useState<Step>('select');
@@ -104,31 +107,62 @@ export function CreateMarketView() {
     return balance >= amount;
   };
 
+  // Fetch casts with optional cursor for pagination
+  const fetchCasts = useCallback(async (fid: number, cursor?: string) => {
+    const isLoadMore = !!cursor;
+    if (isLoadMore) {
+      setCastsLoadingMore(true);
+    } else {
+      setCastsLoading(true);
+      setCastsError(null);
+    }
+
+    try {
+      const params = new URLSearchParams({ fid: String(fid) });
+      if (cursor) params.set('cursor', cursor);
+      const response = await fetch(`/api/casts?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch casts');
+      }
+      const data = await response.json();
+      const newCasts = data.casts || [];
+      setCasts(prev => isLoadMore ? [...prev, ...newCasts] : newCasts);
+      setNextCursor(data.nextCursor ?? null);
+    } catch (error) {
+      setCastsError(error instanceof Error ? error.message : 'Failed to load casts');
+    } finally {
+      setCastsLoading(false);
+      setCastsLoadingMore(false);
+    }
+  }, []);
+
   // Fetch user's casts when we have the FID
   useEffect(() => {
     const fid = context?.user?.fid;
     if (!fid) return;
+    fetchCasts(fid);
+  }, [context?.user?.fid, fetchCasts]);
 
-    async function fetchCasts() {
-      setCastsLoading(true);
-      setCastsError(null);
+  // Infinite scroll: observe sentinel element
+  useEffect(() => {
+    const fid = context?.user?.fid;
+    if (!fid || !nextCursor || step !== 'select') return;
 
-      try {
-        const response = await fetch(`/api/casts?fid=${fid}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch casts');
+    const sentinel = loadMoreRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !castsLoadingMore) {
+          fetchCasts(fid, nextCursor);
         }
-        const data = await response.json();
-        setCasts(data.casts || []);
-      } catch (error) {
-        setCastsError(error instanceof Error ? error.message : 'Failed to load casts');
-      } finally {
-        setCastsLoading(false);
-      }
-    }
+      },
+      { threshold: 0 }
+    );
 
-    fetchCasts();
-  }, [context?.user?.fid]);
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [context?.user?.fid, nextCursor, step, castsLoadingMore, fetchCasts]);
 
   // Handle approval success - move to create step
   useEffect(() => {
@@ -313,6 +347,14 @@ export function CreateMarketView() {
                     onClick={() => handleSelectCast(cast)}
                   />
                 ))}
+                {/* Sentinel for infinite scroll */}
+                {nextCursor && (
+                  <div ref={loadMoreRef} className="py-4 text-center">
+                    {castsLoadingMore && (
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-slate-600 mx-auto" />
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
