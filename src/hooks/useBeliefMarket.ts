@@ -174,6 +174,21 @@ export function usePendingRewards(marketAddress: `0x${string}` | undefined, posi
 }
 
 /**
+ * Get market params (lockPeriod, minRewardDuration, etc.).
+ */
+export function useMarketParams(marketAddress: `0x${string}` | undefined) {
+  return useReadContract({
+    address: marketAddress,
+    abi: BELIEF_MARKET_ABI,
+    functionName: 'getMarketParams',
+    chainId,
+    query: {
+      enabled: !!marketAddress && marketAddress !== '0x0000000000000000000000000000000000000000',
+    },
+  });
+}
+
+/**
  * Get all position details for the current user in a market.
  */
 export function useUserPositionDetails(marketAddress: `0x${string}` | undefined) {

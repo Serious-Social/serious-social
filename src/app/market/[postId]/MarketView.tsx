@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useBeliefMarket, useUserPositionDetails, usePendingRewards } from '~/hooks/useBeliefMarket';
+import { useBeliefMarket, useUserPositionDetails, usePendingRewards, useMarketParams } from '~/hooks/useBeliefMarket';
 import { useFarcasterWithdraw, useFarcasterClaimRewards } from '~/hooks/useFarcasterTransaction';
 import { BeliefCurve } from '~/components/ui/BeliefCurve';
 import { CommitModal } from '~/components/ui/CommitModal';
@@ -29,6 +29,7 @@ interface MarketViewProps {
 export function MarketView({ postId, intent }: MarketViewProps) {
   const { marketAddress, marketExists, state, isLoading, error, refetch } = useBeliefMarket(postId);
   const { positions, refetch: refetchPositions } = useUserPositionDetails(marketAddress as `0x${string}` | undefined);
+  const { data: marketParams } = useMarketParams(marketAddress as `0x${string}` | undefined);
   const { isConnected } = useAccount();
 
   // Cast content state
@@ -207,6 +208,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
                   key={pos.id.toString()}
                   position={pos}
                   marketAddress={marketAddress as `0x${string}`}
+                  minRewardDuration={marketParams ? Number(marketParams.minRewardDuration) : undefined}
                   onAction={() => {
                     refetch();
                     refetchPositions();
@@ -302,14 +304,38 @@ export function MarketView({ postId, intent }: MarketViewProps) {
 interface PositionCardProps {
   position: Position & { id: bigint };
   marketAddress: `0x${string}`;
+  minRewardDuration?: number;
   onAction: () => void;
 }
 
-function PositionCard({ position, marketAddress, onAction }: PositionCardProps) {
+function formatCountdown(seconds: number): string {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  if (days > 0) return `${days}d ${hours}h`;
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}
+
+function PositionCard({ position, marketAddress, minRewardDuration, onAction }: PositionCardProps) {
   const isLocked = Date.now() / 1000 < position.unlockTimestamp;
   const unlockDate = new Date(position.unlockTimestamp * 1000);
   const canWithdraw = !position.withdrawn;
   const [showPenaltyConfirm, setShowPenaltyConfirm] = useState(false);
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
+
+  // Update `now` every minute for countdown
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 60_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const rewardStartTime = minRewardDuration != null
+    ? position.depositTimestamp + minRewardDuration
+    : undefined;
+  const rewardsCountdownRemaining = rewardStartTime != null && now < rewardStartTime
+    ? rewardStartTime - now
+    : undefined;
 
   // Pending rewards
   const { data: pendingRewards } = usePendingRewards(marketAddress, position.id);
@@ -379,13 +405,21 @@ function PositionCard({ position, marketAddress, onAction }: PositionCardProps) 
         </div>
       </div>
 
-      {/* Pending rewards */}
-      {hasPendingRewards && !position.withdrawn && (
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-gray-500">
-            Pending rewards: <span className="text-green-600 font-medium">${formatUSDC(pendingRewards)}</span>
-          </span>
-        </div>
+      {/* Pending rewards or countdown */}
+      {!position.withdrawn && (
+        hasPendingRewards ? (
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-gray-500">
+              Pending rewards: <span className="text-green-600 font-medium">${formatUSDC(pendingRewards)}</span>
+            </span>
+          </div>
+        ) : rewardsCountdownRemaining != null ? (
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-gray-500">
+              Rewards begin in <span className="text-amber-600 font-medium">{formatCountdown(rewardsCountdownRemaining)}</span>
+            </span>
+          </div>
+        ) : null
       )}
 
       {/* Early withdrawal confirmation */}
