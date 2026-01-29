@@ -81,10 +81,12 @@ export function BeliefCurve({ state, size = 'full', onInfoClick }: BeliefCurvePr
 
   return (
     <div className="space-y-4">
-      {/* Status badge */}
-      <div className="flex justify-center">
-        <StatusBadge status={status} />
-      </div>
+      {/* Status badge (only for unchallenged markets) */}
+      {status === 'unchallenged' && (
+        <div className="flex justify-center">
+          <StatusBadge status={status} />
+        </div>
+      )}
 
       {/* Capital & Time bars */}
       {totalPrincipal > 0n && (
