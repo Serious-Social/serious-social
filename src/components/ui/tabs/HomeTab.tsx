@@ -45,14 +45,6 @@ export function HomeTab() {
         </p>
       </div>
 
-      {/* Create button */}
-      <Link
-        href="/create"
-        className="block w-full py-4 px-6 bg-slate-700 hover:bg-slate-800 text-white font-medium rounded-xl transition-colors text-center"
-      >
-        Create a Belief Market
-      </Link>
-
       {/* Recent markets */}
       <div className="space-y-3">
         <h3 className="text-sm font-medium text-gray-500">Recent Markets</h3>
@@ -92,6 +84,20 @@ export function HomeTab() {
           Powered by Neynar
         </p>
       </div>
+
+      {/* Floating action buttons */}
+      <Link
+        href="/about"
+        className="fixed bottom-6 left-6 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl font-bold bg-slate-200 text-slate-700 hover:bg-slate-300 transition-colors"
+      >
+        ?
+      </Link>
+      <Link
+        href="/create"
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl font-bold bg-slate-700 text-white hover:bg-slate-800 transition-colors"
+      >
+        +
+      </Link>
     </div>
   );
 }
