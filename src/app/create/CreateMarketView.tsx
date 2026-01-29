@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAccount, useConnect, useSwitchChain } from 'wagmi';
 import { useMiniApp } from '@neynar/react';
 import { useFactoryAllowance, useUSDCBalance } from '~/hooks/useBeliefMarketWrite';
@@ -216,17 +217,25 @@ export function CreateMarketView() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-4 py-4">
         <div className="flex items-center justify-between max-w-lg mx-auto">
-          {step !== 'select' && step !== 'success' && (
-            <button onClick={handleBack} className="text-slate-600">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          {step === 'select' ? (
+            <Link href="/" className="text-gray-500 hover:text-gray-700">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </Link>
+          ) : step !== 'success' ? (
+            <button onClick={handleBack} className="text-gray-500 hover:text-gray-700">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
+          ) : (
+            <div className="w-5" />
           )}
           <h1 className="text-lg font-semibold text-gray-900 flex-1 text-center">
             {step === 'select' ? 'Select a Cast' : step === 'success' ? 'Market Created' : 'Create Market'}
           </h1>
-          {step !== 'select' && step !== 'success' && <div className="w-6" />}
+          <div className="w-5" />
         </div>
       </header>
 

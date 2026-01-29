@@ -7,9 +7,12 @@ export function AboutView() {
     <div className="px-4 py-4 space-y-4 max-w-lg mx-auto bg-white min-h-screen">
       <Link
         href="/"
-        className="inline-flex items-center text-sm text-slate-600 hover:text-slate-900"
+        className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700"
       >
-        &larr; Back
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to Home
       </Link>
 
       <h1 className="text-xl font-semibold text-gray-900">
