@@ -37,6 +37,21 @@ export function BeliefCurve({ state, size = 'full', onInfoClick }: BeliefCurvePr
   const status = getMarketStatus(state);
   const totalPrincipal = state.supportPrincipal + state.opposePrincipal;
 
+  // Capital split percentages
+  const capitalSupportPercent = totalPrincipal > 0n
+    ? Number((state.supportPrincipal * 100n) / totalPrincipal)
+    : 50;
+
+  // Time commitment: average seconds per dollar = weight / principal
+  const supportTime = state.supportPrincipal > 0n
+    ? Number(state.supportWeight / state.supportPrincipal)
+    : 0;
+  const opposeTime = state.opposePrincipal > 0n
+    ? Number(state.opposeWeight / state.opposePrincipal)
+    : 0;
+  const totalTime = supportTime + opposeTime;
+  const timeSupportPercent = totalTime > 0 ? (supportTime / totalTime) * 100 : 50;
+
   if (size === 'compact') {
     return (
       <div className="space-y-2">
@@ -70,6 +85,43 @@ export function BeliefCurve({ state, size = 'full', onInfoClick }: BeliefCurvePr
       <div className="flex justify-center">
         <StatusBadge status={status} />
       </div>
+
+      {/* Capital & Time bars */}
+      {totalPrincipal > 0n && (
+        <div className="space-y-1.5">
+          {/* Capital bar */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400 w-4 text-center font-medium">$</span>
+            <div className="flex-1 h-2.5 bg-gray-200 rounded-full overflow-hidden flex">
+              <div
+                className="bg-slate-600 transition-all duration-500"
+                style={{ width: `${capitalSupportPercent}%` }}
+              />
+              <div
+                className="bg-slate-300 transition-all duration-500"
+                style={{ width: `${100 - capitalSupportPercent}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Time bar */}
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+            <div className="flex-1 h-2.5 bg-gray-200 rounded-full overflow-hidden flex">
+              <div
+                className="bg-slate-600 transition-all duration-500"
+                style={{ width: `${timeSupportPercent}%` }}
+              />
+              <div
+                className="bg-slate-300 transition-all duration-500"
+                style={{ width: `${100 - timeSupportPercent}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main belief bar */}
       <div className="space-y-2">

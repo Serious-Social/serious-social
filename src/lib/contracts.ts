@@ -99,7 +99,6 @@ export const BELIEF_MARKET_ABI = [
         components: [
           { name: 'lockPeriod', type: 'uint32' },
           { name: 'minRewardDuration', type: 'uint32' },
-          { name: 'maxUserRewardBps', type: 'uint16' },
           { name: 'lateEntryFeeBaseBps', type: 'uint16' },
           { name: 'lateEntryFeeMaxBps', type: 'uint16' },
           { name: 'lateEntryFeeScale', type: 'uint64' },
