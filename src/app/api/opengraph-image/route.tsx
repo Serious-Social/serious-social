@@ -24,8 +24,8 @@ export async function GET(_request: NextRequest) {
         {/* Logo */}
         <img
           src={logoUrl}
-          width={160}
-          height={112}
+          width={320}
+          height={224}
           style={{ objectFit: 'contain' }}
         />
 
@@ -50,27 +50,10 @@ export async function GET(_request: NextRequest) {
             color: '#94a3b8',
             textAlign: 'center',
             maxWidth: '900px',
-            marginBottom: '40px',
           }}
         >
           {APP_DESCRIPTION}
         </p>
-
-        {/* Tagline */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            backgroundColor: '#1e293b',
-            padding: '14px 32px',
-            borderRadius: '12px',
-            border: '1px solid #334155',
-          }}
-        >
-          <span style={{ fontSize: '24px', color: '#64748b' }}>
-            Signal conviction with capital
-          </span>
-        </div>
       </div>
     ),
     {
