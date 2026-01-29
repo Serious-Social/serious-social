@@ -88,10 +88,10 @@ export function MarketView({ postId, intent }: MarketViewProps) {
 
   if (isLoading) {
     return (
-      <div className="px-4 py-6 max-w-lg mx-auto">
+      <div className="px-4 py-6 max-w-lg mx-auto bg-white min-h-screen">
         <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-400 mx-auto mb-4" />
-          <p className="text-gray-400">Loading market data...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading market data...</p>
         </div>
       </div>
     );
@@ -99,10 +99,10 @@ export function MarketView({ postId, intent }: MarketViewProps) {
 
   if (error) {
     return (
-      <div className="px-4 py-6 max-w-lg mx-auto">
+      <div className="px-4 py-6 max-w-lg mx-auto bg-white min-h-screen">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-200 mb-6"
+          className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -110,8 +110,8 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           Back to Home
         </Link>
         <div className="text-center py-8">
-          <h1 className="text-xl font-semibold text-gray-200 mb-2">Error Loading Market</h1>
-          <p className="text-gray-400">{error.message}</p>
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Market</h1>
+          <p className="text-gray-600">{error.message}</p>
         </div>
       </div>
     );
@@ -119,10 +119,10 @@ export function MarketView({ postId, intent }: MarketViewProps) {
 
   if (!marketExists) {
     return (
-      <div className="px-4 py-6 max-w-lg mx-auto">
+      <div className="px-4 py-6 max-w-lg mx-auto bg-white min-h-screen">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-200 mb-6"
+          className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -130,8 +130,8 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           Back to Home
         </Link>
         <div className="text-center py-8">
-          <h1 className="text-xl font-semibold text-gray-200 mb-2">Market Not Found</h1>
-          <p className="text-gray-400">No belief market exists for this post yet.</p>
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">Market Not Found</h1>
+          <p className="text-gray-600">No belief market exists for this post yet.</p>
           <p className="text-xs text-gray-500 mt-4 font-mono break-all">{postId}</p>
         </div>
       </div>
@@ -139,11 +139,11 @@ export function MarketView({ postId, intent }: MarketViewProps) {
   }
 
   return (
-    <div className="px-4 py-2 max-w-lg mx-auto">
+    <div className="px-4 py-4 max-w-lg mx-auto bg-white min-h-screen">
       {/* Back button */}
       <Link
         href="/"
-        className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-200 mb-4"
+        className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -152,7 +152,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
       </Link>
 
       {/* Title */}
-      <h1 className="text-xl font-semibold text-center text-gray-200 mb-6">Belief Market</h1>
+      <h1 className="text-xl font-semibold text-center text-gray-900 mb-6">Belief Market</h1>
 
       <div className="space-y-4">
         {/* Cast content */}
@@ -264,7 +264,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
         </details>
 
         {/* Market info */}
-        <div className="text-center text-xs text-gray-500 space-y-1 pt-4 border-t border-gray-700">
+        <div className="text-center text-xs text-gray-400 space-y-1 pt-4 border-t border-gray-200">
           <p>Market: {marketAddress?.slice(0, 10)}...{marketAddress?.slice(-8)}</p>
           <p>Post ID: {postId.slice(0, 10)}...{postId.slice(-8)}</p>
         </div>

@@ -35,7 +35,7 @@ export function HomeTab() {
   }, []);
 
   return (
-    <div className="px-4 py-2 space-y-6 max-w-lg mx-auto">
+    <div className="px-4 py-4 space-y-6 max-w-lg mx-auto bg-white min-h-screen">
       {/* Header section */}
       <div className="text-center space-y-2">
         <h2 className="text-xl font-semibold text-gray-900">Belief Markets</h2>
