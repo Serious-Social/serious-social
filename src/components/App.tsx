@@ -31,7 +31,7 @@ export default function App() {
     >
       <Header neynarUser={neynarUser} />
       <div className="container py-2">
-        <HomeTab />
+        <HomeTab fid={context?.user?.fid} />
       </div>
     </div>
   );

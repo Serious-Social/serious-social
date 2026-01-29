@@ -10,10 +10,12 @@ import type { MarketData } from "~/app/api/markets/route";
  * This is the default tab that users see when they first open the mini app.
  * It shows recent belief markets and a way to create new ones.
  */
-export function HomeTab() {
+export function HomeTab({ fid }: { fid?: number }) {
   const [markets, setMarkets] = useState<MarketData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [forYouMarkets, setForYouMarkets] = useState<MarketData[]>([]);
+  const [forYouLoading, setForYouLoading] = useState(false);
 
   useEffect(() => {
     async function fetchMarkets() {
@@ -34,6 +36,26 @@ export function HomeTab() {
     fetchMarkets();
   }, []);
 
+  useEffect(() => {
+    if (!fid) return;
+
+    async function fetchForYouMarkets() {
+      setForYouLoading(true);
+      try {
+        const response = await fetch(`/api/markets/for-you?fid=${fid}`);
+        if (!response.ok) return;
+        const data = await response.json();
+        setForYouMarkets(data.markets || []);
+      } catch {
+        // Silently fail — the section just won't appear
+      } finally {
+        setForYouLoading(false);
+      }
+    }
+
+    fetchForYouMarkets();
+  }, [fid]);
+
   return (
     <div className="px-4 py-4 space-y-6 max-w-lg mx-auto bg-white min-h-screen">
       {/* Header section */}
@@ -44,6 +66,27 @@ export function HomeTab() {
           challenge those you disagree with.
         </p>
       </div>
+
+      {/* For You markets */}
+      {forYouLoading && fid && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-500">For You</h3>
+          <div className="text-center py-4">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-slate-600 mx-auto" />
+          </div>
+        </div>
+      )}
+
+      {!forYouLoading && forYouMarkets.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-500">For You</h3>
+          <div className="space-y-3">
+            {forYouMarkets.map((market) => (
+              <MarketCard key={market.postId} market={market} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Recent markets */}
       <div className="space-y-3">
