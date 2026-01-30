@@ -39,6 +39,14 @@ export async function GET(request: NextRequest) {
   let supportPool = 0n;
   let opposePool = 0n;
   let marketExists = false;
+  let state: {
+    belief: bigint;
+    supportWeight: bigint;
+    opposeWeight: bigint;
+    supportPrincipal: bigint;
+    opposePrincipal: bigint;
+    srpBalance: bigint;
+  } | null = null;
 
   try {
     const address = await publicClient.readContract({
@@ -53,7 +61,7 @@ export async function GET(request: NextRequest) {
       marketExists = true;
 
       // Fetch market state
-      const state = await publicClient.readContract({
+      state = await publicClient.readContract({
         address: address,
         abi: BELIEF_MARKET_ABI,
         functionName: 'getMarketState',
@@ -104,13 +112,21 @@ export async function GET(request: NextRequest) {
 
   // Calculate percentages
   const total = supportPool + opposePool;
-  const supportPercent = total > 0n ? Number((supportPool * 100n) / total) : 50;
-  const opposePercent = total > 0n ? 100 - supportPercent : 50;
+  const capitalSupportPercent = total > 0n ? Number((supportPool * 100n) / total) : 50;
 
-  // Format amounts
-  const formatUSDC = (amount: bigint) => {
-    return (Number(amount) / 1_000_000).toFixed(0);
-  };
+  // Time commitment: average seconds per dollar = weight / principal
+  const supportTime = state?.supportPrincipal && state.supportPrincipal > 0n
+    ? Number(state.supportWeight / state.supportPrincipal)
+    : 0;
+  const opposeTime = state?.opposePrincipal && state.opposePrincipal > 0n
+    ? Number(state.opposeWeight / state.opposePrincipal)
+    : 0;
+  const totalTime = supportTime + opposeTime;
+  const timeSupportPercent = totalTime > 0 ? Math.round((supportTime / totalTime) * 100) : 50;
+
+  // Main belief signal
+  const beliefPercent = state?.belief ? Number(state.belief * 100n / BigInt(1e18)) : 50;
+  const beliefOpposePercent = 100 - beliefPercent;
 
   // Use 3:2 aspect ratio for Mini App embeds (1200x800)
   return new ImageResponse(
@@ -146,33 +162,67 @@ export async function GET(request: NextRequest) {
             <p tw="text-4xl text-slate-900 leading-snug">{displayText}</p>
           </div>
 
-          {/* Belief signal bar */}
+          {/* Belief signal bars */}
           {marketExists && (
             <div tw="flex flex-col mt-10">
+              {/* Unchallenged badge - centered */}
               {opposePool === 0n && supportPool > 0n && (
-                <div tw="flex mb-4">
+                <div tw="flex justify-center mb-4">
                   <span tw="text-lg text-amber-700 bg-amber-100 px-4 py-2 rounded-full font-medium">
                     Unchallenged
                   </span>
                 </div>
               )}
-              <div tw="flex justify-between mb-3">
-                <span tw="text-2xl font-medium text-slate-700">
-                  Support: ${formatUSDC(supportPool)} ({supportPercent}%)
-                </span>
-                <span tw="text-2xl font-medium text-slate-700">
-                  Challenge: ${formatUSDC(opposePool)} ({opposePercent}%)
-                </span>
+
+              {/* Capital bar */}
+              <div tw="flex items-center mb-2">
+                <span tw="text-xl text-slate-500 w-10">$</span>
+                <div tw="flex flex-1 h-3 bg-slate-300 rounded-full overflow-hidden">
+                  <div
+                    tw="flex h-full bg-slate-700 rounded-full"
+                    style={{ width: `${capitalSupportPercent}%` }}
+                  />
+                </div>
               </div>
-              <div tw="flex w-full h-8 bg-slate-200 rounded-full overflow-hidden">
-                <div
-                  tw="flex h-full bg-slate-700"
-                  style={{ width: `${supportPercent}%` }}
-                />
-                <div
-                  tw="flex h-full bg-slate-400"
-                  style={{ width: `${opposePercent}%` }}
-                />
+
+              {/* Time bar */}
+              <div tw="flex items-center mb-3">
+                <span tw="text-xl text-slate-500 w-10">{"\u23F1"}</span>
+                <div tw="flex flex-1 h-3 bg-slate-300 rounded-full overflow-hidden">
+                  <div
+                    tw="flex h-full bg-slate-700 rounded-full"
+                    style={{ width: `${timeSupportPercent}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Main belief bar */}
+              <div tw="flex items-center">
+                <div tw="w-10" />
+                <div tw="flex flex-1 h-8 bg-slate-300 rounded-full overflow-hidden">
+                  <div
+                    tw="flex h-full bg-slate-700 rounded-full items-center justify-center"
+                    style={{ width: `${beliefPercent}%`, minWidth: beliefPercent > 5 ? undefined : '40px' }}
+                  >
+                    {beliefPercent > 10 && (
+                      <span tw="text-sm font-bold text-white">{beliefPercent}%</span>
+                    )}
+                  </div>
+                  {beliefPercent <= 10 && beliefOpposePercent > 10 && (
+                    <div tw="flex items-center justify-end flex-1">
+                      <span tw="text-sm font-bold text-slate-600 mr-2">{beliefOpposePercent}%</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Support / Challenge labels */}
+              <div tw="flex mt-2">
+                <div tw="w-10" />
+                <div tw="flex flex-1 justify-between">
+                  <span tw="text-xl font-medium text-slate-700">Support</span>
+                  <span tw="text-xl font-medium text-slate-700">Challenge</span>
+                </div>
               </div>
             </div>
           )}
