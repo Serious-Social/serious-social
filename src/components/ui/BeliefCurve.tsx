@@ -6,6 +6,7 @@
  * - Minimalist, disclosure-style aesthetic
  * - Never framed as "winning"
  */
+import { useState } from 'react';
 import { MarketState, formatBelief, formatUSDC, getMarketStatus } from '~/lib/contracts';
 
 interface BeliefCurveProps {
@@ -187,10 +188,7 @@ export function BeliefCurve({ state, size = 'full', onInfoClick }: BeliefCurvePr
           label="Total Committed"
           value={`$${formatUSDC(totalPrincipal)}`}
         />
-        <StatCard
-          label="Reward Pool"
-          value={`$${formatUSDC(state.srpBalance)}`}
-        />
+        <RewardPoolCard value={`$${formatUSDC(state.srpBalance)}`} />
       </div>
 
       {/* Explanatory note for unchallenged state */}
@@ -229,6 +227,60 @@ function StatCard({ label, value }: { label: string; value: string }) {
       <div className="text-lg font-semibold text-gray-900">{value}</div>
       <div className="text-xs text-gray-500">{label}</div>
     </div>
+  );
+}
+
+function RewardPoolCard({ value }: { value: string }) {
+  const [showModal, setShowModal] = useState(false);
+
+  return (
+    <>
+      <div className="bg-gray-50 rounded-lg p-3 text-center relative">
+        <button
+          onClick={() => setShowModal(true)}
+          className="absolute top-2 right-2 w-5 h-5 rounded-full border border-gray-300 text-gray-400 hover:text-gray-600 hover:border-gray-400 flex items-center justify-center text-xs leading-none transition-colors"
+          aria-label="How rewards work"
+        >
+          ?
+        </button>
+        <div className="text-lg font-semibold text-gray-900">{value}</div>
+        <div className="text-xs text-gray-500">Reward Pool</div>
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-xl max-w-sm mx-4 p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-semibold text-gray-900">How Rewards Work</h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Close"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="text-sm text-gray-600 space-y-2">
+              <p>
+                The <strong>Signal Reward Pool</strong> is a shared pool of USDC that grows over time and is distributed to committed participants.
+              </p>
+              <p>
+                <strong>Where it comes from:</strong> Entry fees are charged when you commit capital to an active market. These start small and gradually increase as more capital enters. Early withdrawal penalties (5% of principal) also feed the pool.
+              </p>
+              <p>
+                <strong>Who earns rewards:</strong> All active participants on both sides earn rewards proportional to their dollar-hours &mdash; the amount committed multiplied by how long it stays committed. The longer you stay and the more you commit, the larger your share.
+              </p>
+              <p>
+                <strong>When you can claim:</strong> Rewards begin accruing after a minimum commitment period. You can claim accumulated rewards at any time once they start. Withdrawing early forfeits any pending rewards.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
