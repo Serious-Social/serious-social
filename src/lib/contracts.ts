@@ -9,8 +9,8 @@ export const CONTRACTS = {
     usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as `0x${string}`, // USDC on Base
   },
   [baseSepolia.id]: {
-    factory: '0x44572A5De82D591701cCfb85EEd81060d648F781' as `0x${string}`,
-    usdc: '0x1126cD7D544979B70b8E75a993Ed89f00BfB165B' as `0x${string}`, // Mock USDC on Base Sepolia
+    factory: '0x37D0E4E15d3b60350B29844E5eb24d3dbaB37282' as `0x${string}`,
+    usdc: '0x4d16DA28F1948770F6e699a250eD763f04640360' as `0x${string}`, // Mock USDC on Base Sepolia
   },
 } as const;
 
