@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount, useConnect, useSwitchChain } from 'wagmi';
+import { useMiniApp } from '@neynar/react';
 import { useCommitFlow } from '~/hooks/useBeliefMarketWrite';
 import { Side, formatUSDC, parseUSDC, DEFAULT_CHAIN_ID, CONTRACTS } from '~/lib/contracts';
 
@@ -20,6 +21,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, onSu
   const { isConnected, chain, address } = useAccount();
   const { connectors, connect } = useConnect();
   const { switchChain } = useSwitchChain();
+  const { context } = useMiniApp();
 
   const [amount, setAmount] = useState('');
   const [step, setStep] = useState<Step>('input');
@@ -72,8 +74,21 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, onSu
           amount: formatUSDC(amountBigInt),
         }),
       }).catch((err) => console.error('Failed to send notification:', err));
+
+      // Record participant (fire and forget)
+      if (context?.user?.fid) {
+        fetch('/api/market-participants', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            postId,
+            fid: context.user.fid,
+            side: side === Side.Support ? 'support' : 'challenge',
+          }),
+        }).catch((err) => console.error('Failed to record participant:', err));
+      }
     }
-  }, [isCommitSuccess, step, side, postId, amountBigInt]);
+  }, [isCommitSuccess, step, side, postId, amountBigInt, context]);
 
   // Reset state when modal closes
   useEffect(() => {

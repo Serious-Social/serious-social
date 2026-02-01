@@ -206,6 +206,57 @@ export async function getBeliefSnapshots(
   return result;
 }
 
+/*//////////////////////////////////////////////////////////////
+                    MARKET PARTICIPANTS
+//////////////////////////////////////////////////////////////*/
+
+export interface MarketParticipants {
+  support: number[];
+  challenge: number[];
+}
+
+const participantsStore = new Map<string, MarketParticipants>();
+
+function getMarketParticipantsKey(postId: string): string {
+  return `${APP_NAME}:participants:${postId}`;
+}
+
+export async function getMarketParticipants(
+  postId: string
+): Promise<MarketParticipants | null> {
+  const key = getMarketParticipantsKey(postId);
+  if (redis) {
+    return await redis.get<MarketParticipants>(key);
+  }
+  return participantsStore.get(key) || null;
+}
+
+export async function addMarketParticipant(
+  postId: string,
+  fid: number,
+  side: 'support' | 'challenge'
+): Promise<void> {
+  const key = getMarketParticipantsKey(postId);
+  let data: MarketParticipants;
+
+  if (redis) {
+    const existing = await redis.get<MarketParticipants>(key);
+    data = existing || { support: [], challenge: [] };
+  } else {
+    data = participantsStore.get(key) || { support: [], challenge: [] };
+  }
+
+  if (!data[side].includes(fid)) {
+    data[side].push(fid);
+  }
+
+  if (redis) {
+    await redis.set(key, data);
+  } else {
+    participantsStore.set(key, data);
+  }
+}
+
 export async function clearAllMarketData(): Promise<{ deletedKeys: number }> {
   if (redis) {
     // Get all recent market postIds so we can delete their cast mappings

@@ -9,11 +9,18 @@
 import { useState } from 'react';
 import { MarketState, formatBelief, formatUSDC, getMarketStatus } from '~/lib/contracts';
 
+export interface ProfileInfo {
+  fid: number;
+  pfpUrl: string;
+  username: string;
+}
+
 interface BeliefCurveProps {
   state: MarketState | null;
   size?: 'compact' | 'full';
   onInfoClick?: () => void;
   beliefChange24h?: number | null;
+  participants?: { support: ProfileInfo[]; challenge: ProfileInfo[] };
 }
 
 /** Format seconds into a human-readable duration */
@@ -28,7 +35,7 @@ function formatDuration(seconds: number): string {
   return '<1m';
 }
 
-export function BeliefCurve({ state, size = 'full', onInfoClick, beliefChange24h }: BeliefCurveProps) {
+export function BeliefCurve({ state, size = 'full', onInfoClick, beliefChange24h, participants }: BeliefCurveProps) {
   if (!state) {
     return (
       <div className="text-center text-gray-500 py-8">
@@ -163,6 +170,14 @@ export function BeliefCurve({ state, size = 'full', onInfoClick, beliefChange24h
           <span>Challenge</span>
         </div>
 
+        {/* Participant avatars */}
+        {participants && (participants.support.length > 0 || participants.challenge.length > 0) && (
+          <div className="flex justify-between items-start">
+            <AvatarRow profiles={participants.support} align="left" />
+            <AvatarRow profiles={participants.challenge} align="right" />
+          </div>
+        )}
+
         {/* How does this work link */}
         {onInfoClick && (
           <div className="text-center">
@@ -291,6 +306,35 @@ function RewardPoolCard({ value }: { value: string }) {
         </div>
       )}
     </>
+  );
+}
+
+const MAX_VISIBLE_AVATARS = 5;
+
+function AvatarRow({ profiles, align }: { profiles: ProfileInfo[]; align: 'left' | 'right' }) {
+  if (profiles.length === 0) return <div />;
+
+  const visible = profiles.slice(0, MAX_VISIBLE_AVATARS);
+  const overflow = profiles.length - MAX_VISIBLE_AVATARS;
+
+  return (
+    <div className={`flex items-center ${align === 'right' ? 'flex-row-reverse' : ''}`}>
+      {visible.map((p, i) => (
+        <img
+          key={p.fid}
+          src={p.pfpUrl}
+          alt={p.username}
+          title={p.username}
+          className="w-6 h-6 rounded-full border-2 border-white object-cover"
+          style={{ marginLeft: align === 'left' && i > 0 ? '-0.35rem' : undefined, marginRight: align === 'right' && i > 0 ? '-0.35rem' : undefined }}
+        />
+      ))}
+      {overflow > 0 && (
+        <span className={`text-xs text-gray-500 ${align === 'left' ? 'ml-1' : 'mr-1'}`}>
+          +{overflow}
+        </span>
+      )}
+    </div>
   );
 }
 

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useBeliefMarket, useUserPositionDetails, usePendingRewards, useMarketParams } from '~/hooks/useBeliefMarket';
 import { useFarcasterWithdraw, useFarcasterClaimRewards } from '~/hooks/useFarcasterTransaction';
-import { BeliefCurve } from '~/components/ui/BeliefCurve';
+import { BeliefCurve, type ProfileInfo } from '~/components/ui/BeliefCurve';
 import { CommitModal } from '~/components/ui/CommitModal';
 import { ShareButton } from '~/components/ui/Share';
 import { formatUSDC, Side, Position } from '~/lib/contracts';
@@ -38,6 +38,9 @@ export function MarketView({ postId, intent }: MarketViewProps) {
 
   // 24h belief change
   const [beliefChange24h, setBeliefChange24h] = useState<number | null>(null);
+
+  // Participants
+  const [participants, setParticipants] = useState<{ support: ProfileInfo[]; challenge: ProfileInfo[] } | null>(null);
 
   // Refs
   const howItWorksRef = useRef<HTMLDetailsElement>(null);
@@ -92,6 +95,21 @@ export function MarketView({ postId, intent }: MarketViewProps) {
     }
     fetchSnapshot();
   }, [postId, state]);
+
+  // Fetch participants
+  useEffect(() => {
+    async function fetchParticipants() {
+      try {
+        const res = await fetch(`/api/market-participants?postId=${postId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        setParticipants(data);
+      } catch {
+        // Participants not available
+      }
+    }
+    fetchParticipants();
+  }, [postId]);
 
   // Open modal if intent is provided via URL
   useEffect(() => {
@@ -210,6 +228,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           <BeliefCurve
             state={state ?? null}
             beliefChange24h={beliefChange24h}
+            participants={participants ?? undefined}
             onInfoClick={() => {
               const el = howItWorksRef.current;
               if (el) {
