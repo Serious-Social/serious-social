@@ -82,8 +82,8 @@ export function BeliefCurve({ state, size = 'full', onInfoClick }: BeliefCurvePr
 
   return (
     <div className="space-y-4">
-      {/* Status badge (only for unchallenged markets) */}
-      {status === 'unchallenged' && (
+      {/* Status badge */}
+      {(status === 'unchallenged' || status === 'contested') && (
         <div className="flex justify-center">
           <StatusBadge status={status} />
         </div>
