@@ -58,17 +58,47 @@ export async function GET(request: NextRequest) {
     // Batch-fetch belief snapshots for 24h delta
     const snapshotsMap = await getBeliefSnapshots(postIds);
 
-    // Fetch data for each market in parallel
-    const markets = await Promise.all(
-      postIds.map(async (postId): Promise<MarketData | null> => {
-        try {
-          // Get cast mapping
-          const mapping = await getCastMapping(postId);
-          if (!mapping) {
-            return null;
-          }
+    // Get cast mappings for all markets
+    const mappings = await Promise.all(
+      postIds.map(async (postId) => ({
+        postId,
+        mapping: await getCastMapping(postId),
+      }))
+    );
 
-          // Check if market exists on-chain
+    // Filter to markets with valid mappings
+    const validMappings = mappings.filter(
+      (m): m is { postId: string; mapping: NonNullable<typeof m.mapping> } => m.mapping !== null
+    );
+
+    // Bulk-fetch all casts in a single Neynar API call
+    const castHashes = validMappings.map((m) => m.mapping.castHash);
+    const castMap = new Map<string, MarketData['cast']>();
+
+    if (castHashes.length > 0) {
+      try {
+        const client = getNeynarClient();
+        const response = await client.fetchBulkCasts({ casts: castHashes });
+        for (const cast of response.result.casts) {
+          castMap.set(cast.hash, {
+            text: cast.text,
+            author: {
+              fid: cast.author.fid,
+              username: cast.author.username,
+              displayName: cast.author.display_name || cast.author.username,
+              pfpUrl: cast.author.pfp_url || '',
+            },
+          });
+        }
+      } catch (e) {
+        console.error('Bulk cast fetch failed:', e);
+      }
+    }
+
+    // Fetch on-chain data for each market in parallel
+    const markets = await Promise.all(
+      validMappings.map(async ({ postId, mapping }): Promise<MarketData | null> => {
+        try {
           let marketAddress: string | null = null;
           let exists = false;
           let state = null;
@@ -110,29 +140,6 @@ export async function GET(request: NextRequest) {
             // Market might not exist yet, that's okay
           }
 
-          // Fetch cast content
-          let cast = null;
-          try {
-            const client = getNeynarClient();
-            const response = await client.lookupCastByHashOrWarpcastUrl({
-              identifier: mapping.castHash,
-              type: 'hash',
-            });
-            if (response.cast) {
-              cast = {
-                text: response.cast.text,
-                author: {
-                  fid: response.cast.author.fid,
-                  username: response.cast.author.username,
-                  displayName: response.cast.author.display_name || response.cast.author.username,
-                  pfpUrl: response.cast.author.pfp_url || '',
-                },
-              };
-            }
-          } catch (e) {
-            // Cast fetch failed, continue without it
-          }
-
           // Compute 24h belief change
           let beliefChange24h: number | null = null;
           if (state) {
@@ -163,7 +170,7 @@ export async function GET(request: NextRequest) {
             postId,
             marketAddress,
             exists,
-            cast,
+            cast: castMap.get(mapping.castHash) ?? null,
             state,
             createdAt: mapping.createdAt,
             beliefChange24h,

@@ -83,13 +83,40 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ markets: [] });
     }
 
-    // Fetch full data for matching markets (same pattern as /api/markets)
-    const markets = await Promise.all(
-      matchingPostIds.map(async (postId): Promise<MarketData | null> => {
-        try {
-          const mapping = await getCastMapping(postId);
-          if (!mapping) return null;
+    // Re-fetch mappings for matching markets and bulk-fetch casts
+    const matchedMappings = await Promise.all(
+      matchingPostIds.map(async (postId) => ({
+        postId,
+        mapping: (await getCastMapping(postId))!,
+      }))
+    );
 
+    const castHashes = matchedMappings.map((m) => m.mapping.castHash);
+    const castMap = new Map<string, MarketData['cast']>();
+
+    if (castHashes.length > 0) {
+      try {
+        const response = await client.fetchBulkCasts({ casts: castHashes });
+        for (const cast of response.result.casts) {
+          castMap.set(cast.hash, {
+            text: cast.text,
+            author: {
+              fid: cast.author.fid,
+              username: cast.author.username,
+              displayName: cast.author.display_name || cast.author.username,
+              pfpUrl: cast.author.pfp_url || '',
+            },
+          });
+        }
+      } catch (e) {
+        console.error('Bulk cast fetch failed:', e);
+      }
+    }
+
+    // Fetch on-chain data for matching markets
+    const markets = await Promise.all(
+      matchedMappings.map(async ({ postId, mapping }): Promise<MarketData | null> => {
+        try {
           let marketAddress: string | null = null;
           let exists = false;
           let state = null;
@@ -130,32 +157,11 @@ export async function GET(request: NextRequest) {
             // Market might not exist yet
           }
 
-          let cast = null;
-          try {
-            const response = await client.lookupCastByHashOrWarpcastUrl({
-              identifier: mapping.castHash,
-              type: 'hash',
-            });
-            if (response.cast) {
-              cast = {
-                text: response.cast.text,
-                author: {
-                  fid: response.cast.author.fid,
-                  username: response.cast.author.username,
-                  displayName: response.cast.author.display_name || response.cast.author.username,
-                  pfpUrl: response.cast.author.pfp_url || '',
-                },
-              };
-            }
-          } catch {
-            // Cast fetch failed
-          }
-
           return {
             postId,
             marketAddress,
             exists,
-            cast,
+            cast: castMap.get(mapping.castHash) ?? null,
             state,
             createdAt: mapping.createdAt,
             beliefChange24h: null,
