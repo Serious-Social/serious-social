@@ -16,13 +16,16 @@ interface BeliefCurveProps {
   beliefChange24h?: number | null;
 }
 
-/** Format micro-USDC·s weight to abbreviated USDC·s (K/M/B) */
-function formatWeight(weight: bigint): string {
-  const value = Number(weight) / 1e6;
-  if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
-  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
-  if (value >= 1e3) return `${(value / 1e3).toFixed(1)}K`;
-  return value.toFixed(1);
+/** Format seconds into a human-readable duration */
+function formatDuration(seconds: number): string {
+  if (seconds <= 0) return '--';
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  if (days > 0) return `${days}d ${hours}h`;
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  if (minutes > 0) return `${minutes}m`;
+  return '<1m';
 }
 
 export function BeliefCurve({ state, size = 'full', onInfoClick, beliefChange24h }: BeliefCurveProps) {
@@ -176,12 +179,12 @@ export function BeliefCurve({ state, size = 'full', onInfoClick, beliefChange24h
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-4 pt-2">
         <StatCard
-          label="Support Signal"
-          value={formatWeight(state.supportWeight)}
+          label="Avg Support Hold"
+          value={formatDuration(supportTime)}
         />
         <StatCard
-          label="Challenge Signal"
-          value={formatWeight(state.opposeWeight)}
+          label="Avg Challenge Hold"
+          value={formatDuration(opposeTime)}
         />
         <StatCard
           label="Support Capital"
