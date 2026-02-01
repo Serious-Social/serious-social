@@ -131,7 +131,7 @@ export function BeliefCurve({ state, size = 'full', onInfoClick }: BeliefCurvePr
         <div className="h-6 bg-gray-200 rounded-lg overflow-hidden flex">
           <div
             className="bg-slate-600 transition-all duration-500 flex items-center justify-end pr-2"
-            style={{ width: `${Math.max(beliefPercent, 10)}%` }}
+            style={{ width: `${beliefPercent > 0 ? Math.max(beliefPercent, 10) : 0}%` }}
           >
             {beliefPercent >= 20 && (
               <span className="text-white text-sm font-medium">{beliefPercent.toFixed(0)}%</span>
@@ -139,7 +139,7 @@ export function BeliefCurve({ state, size = 'full', onInfoClick }: BeliefCurvePr
           </div>
           <div
             className="bg-slate-300 transition-all duration-500 flex items-center justify-start pl-2"
-            style={{ width: `${Math.max(opposePercent, 10)}%` }}
+            style={{ width: `${opposePercent > 0 ? Math.max(opposePercent, 10) : 0}%` }}
           >
             {opposePercent >= 20 && (
               <span className="text-slate-700 text-sm font-medium">{opposePercent.toFixed(0)}%</span>
