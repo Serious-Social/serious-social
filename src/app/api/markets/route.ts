@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPublicClient, http } from 'viem';
 import { baseSepolia } from 'viem/chains';
-import { getRecentMarkets, getCastMapping } from '~/lib/kv';
+import { getRecentMarkets, getCastMapping, getBeliefSnapshots, BeliefSnapshotEntry } from '~/lib/kv';
 import { getNeynarClient } from '~/lib/neynar';
 import {
   CONTRACTS,
@@ -34,6 +34,7 @@ export interface MarketData {
     opposePrincipal: string;
   } | null;
   createdAt: number;
+  beliefChange24h: number | null;
 }
 
 /**
@@ -51,6 +52,9 @@ export async function GET(request: NextRequest) {
     if (postIds.length === 0) {
       return NextResponse.json({ markets: [] });
     }
+
+    // Batch-fetch belief snapshots for 24h delta
+    const snapshotsMap = await getBeliefSnapshots(postIds);
 
     // Fetch data for each market in parallel
     const markets = await Promise.all(
@@ -123,6 +127,32 @@ export async function GET(request: NextRequest) {
             // Cast fetch failed, continue without it
           }
 
+          // Compute 24h belief change
+          let beliefChange24h: number | null = null;
+          if (state) {
+            const snapshots = snapshotsMap.get(postId);
+            if (snapshots && snapshots.length > 0) {
+              const now = Math.floor(Date.now() / 1000);
+              const target = now - 24 * 60 * 60;
+              // Find entry closest to 24h ago
+              let closest = snapshots[0];
+              let closestDiff = Math.abs(closest.ts - target);
+              for (const entry of snapshots) {
+                const diff = Math.abs(entry.ts - target);
+                if (diff < closestDiff) {
+                  closest = entry;
+                  closestDiff = diff;
+                }
+              }
+              // Only show delta if the snapshot is at least 1h old
+              if (now - closest.ts >= 3600) {
+                const currentBelief = Number(BigInt(state.belief) * 10000n / BigInt(1e18)) / 100;
+                const snapshotBelief = Number(BigInt(closest.belief) * 10000n / BigInt(1e18)) / 100;
+                beliefChange24h = Math.round((currentBelief - snapshotBelief) * 10) / 10;
+              }
+            }
+          }
+
           return {
             postId,
             marketAddress,
@@ -130,6 +160,7 @@ export async function GET(request: NextRequest) {
             cast,
             state,
             createdAt: mapping.createdAt,
+            beliefChange24h,
           };
         } catch (e) {
           console.error(`Error fetching market ${postId}:`, e);

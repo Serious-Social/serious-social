@@ -154,6 +154,7 @@ export async function GET(request: NextRequest) {
             cast,
             state,
             createdAt: mapping.createdAt,
+            beliefChange24h: null,
           };
         } catch (e) {
           console.error(`Error fetching market ${postId}:`, e);

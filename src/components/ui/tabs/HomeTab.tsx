@@ -187,7 +187,14 @@ function MarketCard({ market }: { market: MarketData }) {
         <div className="space-y-1">
           <div className="flex justify-between text-xs text-gray-500">
             <span>${formatUSDC(supportAmount)} support</span>
-            <span>${formatUSDC(opposeAmount)} challenge</span>
+            <div className="flex items-center gap-1.5">
+              {market.beliefChange24h != null && market.beliefChange24h !== 0 && (
+                <span className={`text-xs font-medium ${market.beliefChange24h > 0 ? 'text-slate-500' : 'text-amber-600'}`}>
+                  {market.beliefChange24h > 0 ? '+' : ''}{market.beliefChange24h}%
+                </span>
+              )}
+              <span>${formatUSDC(opposeAmount)} challenge</span>
+            </div>
           </div>
           <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
             <div

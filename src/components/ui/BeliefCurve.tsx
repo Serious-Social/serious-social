@@ -13,6 +13,7 @@ interface BeliefCurveProps {
   state: MarketState | null;
   size?: 'compact' | 'full';
   onInfoClick?: () => void;
+  beliefChange24h?: number | null;
 }
 
 /** Format micro-USDC·s weight to abbreviated USDC·s (K/M/B) */
@@ -24,7 +25,7 @@ function formatWeight(weight: bigint): string {
   return value.toFixed(1);
 }
 
-export function BeliefCurve({ state, size = 'full', onInfoClick }: BeliefCurveProps) {
+export function BeliefCurve({ state, size = 'full', onInfoClick, beliefChange24h }: BeliefCurveProps) {
   if (!state) {
     return (
       <div className="text-center text-gray-500 py-8">
@@ -126,7 +127,14 @@ export function BeliefCurve({ state, size = 'full', onInfoClick }: BeliefCurvePr
 
       {/* Main belief bar */}
       <div className="space-y-2">
-        <span className="text-xs text-gray-500 font-medium">⚖️ Net Belief Signal</span>
+        <span className="text-xs text-gray-500 font-medium">
+          ⚖️ Net Belief Signal
+          {beliefChange24h != null && beliefChange24h !== 0 && (
+            <span className={`ml-1.5 ${beliefChange24h > 0 ? 'text-slate-600' : 'text-amber-600'}`}>
+              {beliefChange24h > 0 ? '+' : ''}{beliefChange24h}% 24h
+            </span>
+          )}
+        </span>
         <div className="h-6 bg-gray-200 rounded-lg overflow-hidden flex">
           <div
             className="bg-slate-600 transition-all duration-500 flex items-center justify-end pr-2"

@@ -36,6 +36,9 @@ export function MarketView({ postId, intent }: MarketViewProps) {
   const [castContent, setCastContent] = useState<CastContent | null>(null);
   const [contentLoading, setContentLoading] = useState(true);
 
+  // 24h belief change
+  const [beliefChange24h, setBeliefChange24h] = useState<number | null>(null);
+
   // Refs
   const howItWorksRef = useRef<HTMLDetailsElement>(null);
 
@@ -71,6 +74,24 @@ export function MarketView({ postId, intent }: MarketViewProps) {
     }
     fetchContent();
   }, [postId]);
+
+  // Fetch 24h belief snapshot
+  useEffect(() => {
+    if (!state) return;
+    async function fetchSnapshot() {
+      try {
+        const res = await fetch(`/api/belief-snapshot?postId=${postId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.beliefChange24h != null) {
+          setBeliefChange24h(data.beliefChange24h);
+        }
+      } catch {
+        // Snapshot not available yet
+      }
+    }
+    fetchSnapshot();
+  }, [postId, state]);
 
   // Open modal if intent is provided via URL
   useEffect(() => {
@@ -188,6 +209,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           <h2 className="text-sm font-medium text-gray-500 mb-4">Belief Signal</h2>
           <BeliefCurve
             state={state ?? null}
+            beliefChange24h={beliefChange24h}
             onInfoClick={() => {
               const el = howItWorksRef.current;
               if (el) {

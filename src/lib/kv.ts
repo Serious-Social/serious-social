@@ -141,6 +141,71 @@ export async function getRecentMarkets(limit: number = 10): Promise<string[]> {
  * Removes the recent markets list and all cast mappings for those markets.
  * Useful after contract redeployments that invalidate existing markets.
  */
+/*//////////////////////////////////////////////////////////////
+                    BELIEF SNAPSHOTS
+//////////////////////////////////////////////////////////////*/
+
+export interface BeliefSnapshotEntry {
+  belief: string;
+  ts: number;
+}
+
+const MAX_SNAPSHOT_ENTRIES = 25;
+const SNAPSHOT_TTL_SECONDS = 48 * 60 * 60; // 48h
+
+function getBeliefSnapshotKey(postId: string): string {
+  return `${APP_NAME}:belief_snapshot:${postId}`;
+}
+
+/**
+ * Get the rolling belief snapshot list for a market.
+ */
+export async function getBeliefSnapshot(
+  postId: string
+): Promise<BeliefSnapshotEntry[]> {
+  const key = getBeliefSnapshotKey(postId);
+  if (redis) {
+    const data = await redis.get<BeliefSnapshotEntry[]>(key);
+    return data || [];
+  }
+  return [];
+}
+
+/**
+ * Store the rolling belief snapshot list for a market.
+ */
+export async function setBeliefSnapshot(
+  postId: string,
+  snapshots: BeliefSnapshotEntry[]
+): Promise<void> {
+  const key = getBeliefSnapshotKey(postId);
+  const trimmed = snapshots.slice(0, MAX_SNAPSHOT_ENTRIES);
+  if (redis) {
+    await redis.set(key, trimmed, { ex: SNAPSHOT_TTL_SECONDS });
+  }
+}
+
+/**
+ * Batch-read belief snapshots for multiple markets (one mget call).
+ */
+export async function getBeliefSnapshots(
+  postIds: string[]
+): Promise<Map<string, BeliefSnapshotEntry[]>> {
+  const result = new Map<string, BeliefSnapshotEntry[]>();
+  if (postIds.length === 0) return result;
+
+  if (redis) {
+    const keys = postIds.map(getBeliefSnapshotKey);
+    const values = await redis.mget<(BeliefSnapshotEntry[] | null)[]>(...keys);
+    for (let i = 0; i < postIds.length; i++) {
+      if (values[i]) {
+        result.set(postIds[i], values[i]!);
+      }
+    }
+  }
+  return result;
+}
+
 export async function clearAllMarketData(): Promise<{ deletedKeys: number }> {
   if (redis) {
     // Get all recent market postIds so we can delete their cast mappings
