@@ -32,6 +32,8 @@ export interface MarketData {
     belief: string;
     supportPrincipal: string;
     opposePrincipal: string;
+    supportWeight: string;
+    opposeWeight: string;
   } | null;
   createdAt: number;
   beliefChange24h: number | null;
@@ -90,6 +92,8 @@ export async function GET(request: NextRequest) {
                 functionName: 'getMarketState',
               }) as {
                 belief: bigint;
+                supportWeight: bigint;
+                opposeWeight: bigint;
                 supportPrincipal: bigint;
                 opposePrincipal: bigint;
               };
@@ -98,6 +102,8 @@ export async function GET(request: NextRequest) {
                 belief: marketState.belief.toString(),
                 supportPrincipal: marketState.supportPrincipal.toString(),
                 opposePrincipal: marketState.opposePrincipal.toString(),
+                supportWeight: marketState.supportWeight.toString(),
+                opposeWeight: marketState.opposeWeight.toString(),
               };
             }
           } catch (e) {

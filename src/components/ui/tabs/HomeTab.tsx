@@ -148,12 +148,19 @@ export function HomeTab({ fid }: { fid?: number }) {
 function MarketCard({ market }: { market: MarketData }) {
   const supportAmount = market.state ? BigInt(market.state.supportPrincipal) : 0n;
   const opposeAmount = market.state ? BigInt(market.state.opposePrincipal) : 0n;
-  const total = supportAmount + opposeAmount;
-  const supportPercent = total > 0n ? Number((supportAmount * 100n) / total) : 50;
+  const totalPrincipal = supportAmount + opposeAmount;
+  const capitalSupportPercent = totalPrincipal > 0n ? Number((supportAmount * 100n) / totalPrincipal) : 50;
 
-  const formatUSDC = (amount: bigint) => {
-    return (Number(amount) / 1_000_000).toFixed(0);
-  };
+  const supportWeight = market.state ? BigInt(market.state.supportWeight) : 0n;
+  const opposeWeight = market.state ? BigInt(market.state.opposeWeight) : 0n;
+  const supportTime = supportAmount > 0n ? Number(supportWeight / supportAmount) : 0;
+  const opposeTime = opposeAmount > 0n ? Number(opposeWeight / opposeAmount) : 0;
+  const totalTime = supportTime + opposeTime;
+  const timeSupportPercent = totalTime > 0 ? (supportTime / totalTime) * 100 : 50;
+
+  const beliefPercent = market.state
+    ? Number(BigInt(market.state.belief) * 100n / BigInt(1e18))
+    : 50;
 
   const timeAgo = getTimeAgo(new Date(market.createdAt));
 
@@ -182,25 +189,43 @@ function MarketCard({ market }: { market: MarketData }) {
         {market.cast?.text || 'Claim not available'}
       </p>
 
-      {/* Belief bar */}
+      {/* Condensed belief bars */}
       {market.exists && market.state && (
-        <div className="space-y-1">
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>${formatUSDC(supportAmount)} support</span>
-            <div className="flex items-center gap-1.5">
-              {market.beliefChange24h != null && market.beliefChange24h !== 0 && (
-                <span className={`text-xs font-medium ${market.beliefChange24h > 0 ? 'text-slate-500' : 'text-amber-600'}`}>
-                  {market.beliefChange24h > 0 ? '+' : ''}{market.beliefChange24h}%
-                </span>
-              )}
-              <span>${formatUSDC(opposeAmount)} challenge</span>
+        <div className="space-y-1.5">
+          {totalPrincipal > 0n && (
+            <>
+              {/* Capital bar */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs w-4 shrink-0">💰</span>
+                <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden flex">
+                  <div className="bg-slate-600 transition-all" style={{ width: `${capitalSupportPercent}%` }} />
+                  <div className="bg-slate-300 transition-all" style={{ width: `${100 - capitalSupportPercent}%` }} />
+                </div>
+              </div>
+
+              {/* Time bar */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs w-4 shrink-0">⏳</span>
+                <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden flex">
+                  <div className="bg-slate-600 transition-all" style={{ width: `${timeSupportPercent}%` }} />
+                  <div className="bg-slate-300 transition-all" style={{ width: `${100 - timeSupportPercent}%` }} />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Net belief bar */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs w-4 shrink-0">⚖️</span>
+            <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden flex">
+              <div className="bg-slate-600 transition-all" style={{ width: `${beliefPercent}%` }} />
+              <div className="bg-slate-300 transition-all" style={{ width: `${100 - beliefPercent}%` }} />
             </div>
-          </div>
-          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-slate-600 transition-all"
-              style={{ width: `${supportPercent}%` }}
-            />
+            {market.beliefChange24h != null && market.beliefChange24h !== 0 && (
+              <span className={`text-xs font-medium shrink-0 ${market.beliefChange24h > 0 ? 'text-slate-500' : 'text-amber-600'}`}>
+                {market.beliefChange24h > 0 ? '+' : ''}{market.beliefChange24h}%
+              </span>
+            )}
           </div>
         </div>
       )}
