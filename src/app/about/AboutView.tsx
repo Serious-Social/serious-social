@@ -1,6 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { CONTRACTS, DEFAULT_CHAIN_ID } from "~/lib/contracts";
+import { baseSepolia } from "wagmi/chains";
+
+const chainId = DEFAULT_CHAIN_ID;
+const explorerUrl = chainId === baseSepolia.id
+  ? "https://sepolia.basescan.org"
+  : "https://basescan.org";
 
 export function AboutView() {
   return (
@@ -113,6 +120,47 @@ export function AboutView() {
         <p className="text-sm text-gray-700 font-medium">
           This is infrastructure for serious belief coordination.
         </p>
+      </section>
+
+      {/* Contracts & Source */}
+      <section className="bg-white rounded-xl p-4 shadow-sm space-y-2">
+        <h2 className="text-base font-semibold text-gray-900">
+          Contracts &amp; Source
+        </h2>
+        <ul className="text-sm text-gray-700 space-y-2">
+          <li>
+            <a
+              href={`${explorerUrl}/address/${CONTRACTS[chainId].factory}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-600 hover:text-slate-800 underline underline-offset-2"
+            >
+              BeliefMarketFactory
+            </a>
+            <span className="text-gray-400 text-xs ml-1">(verified)</span>
+          </li>
+          <li>
+            <a
+              href={`${explorerUrl}/address/${CONTRACTS[chainId].vault}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-600 hover:text-slate-800 underline underline-offset-2"
+            >
+              BeliefVault
+            </a>
+            <span className="text-gray-400 text-xs ml-1">(verified)</span>
+          </li>
+          <li>
+            <a
+              href="https://github.com/Serious-Social/serious-contracts"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-600 hover:text-slate-800 underline underline-offset-2"
+            >
+              Source Code on GitHub
+            </a>
+          </li>
+        </ul>
       </section>
     </div>
   );
