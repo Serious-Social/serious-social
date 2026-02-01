@@ -91,11 +91,11 @@ export function BeliefCurve({ state, size = 'full', onInfoClick }: BeliefCurvePr
 
       {/* Capital & Time bars */}
       {totalPrincipal > 0n && (
-        <div className="space-y-1.5">
+        <div className="space-y-3">
           {/* Capital bar */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400 w-4 text-center font-medium">$</span>
-            <div className="flex-1 h-2.5 bg-gray-200 rounded-full overflow-hidden flex">
+          <div className="space-y-1">
+            <span className="text-xs text-gray-500 font-medium">💰 Capital Conviction</span>
+            <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden flex">
               <div
                 className="bg-slate-600 transition-all duration-500"
                 style={{ width: `${capitalSupportPercent}%` }}
@@ -108,11 +108,9 @@ export function BeliefCurve({ state, size = 'full', onInfoClick }: BeliefCurvePr
           </div>
 
           {/* Time bar */}
-          <div className="flex items-center gap-2">
-            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-            </svg>
-            <div className="flex-1 h-2.5 bg-gray-200 rounded-full overflow-hidden flex">
+          <div className="space-y-1">
+            <span className="text-xs text-gray-500 font-medium">⏳ Time Conviction</span>
+            <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden flex">
               <div
                 className="bg-slate-600 transition-all duration-500"
                 style={{ width: `${timeSupportPercent}%` }}
@@ -128,6 +126,7 @@ export function BeliefCurve({ state, size = 'full', onInfoClick }: BeliefCurvePr
 
       {/* Main belief bar */}
       <div className="space-y-2">
+        <span className="text-xs text-gray-500 font-medium">⚖️ Net Belief Signal</span>
         <div className="h-6 bg-gray-200 rounded-lg overflow-hidden flex">
           <div
             className="bg-slate-600 transition-all duration-500 flex items-center justify-end pr-2"
