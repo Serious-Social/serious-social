@@ -135,3 +135,30 @@ export async function getRecentMarkets(limit: number = 10): Promise<string[]> {
   }
   return recentMarketsStore.slice(0, limit);
 }
+
+/**
+ * Clear all market-related data from KV.
+ * Removes the recent markets list and all cast mappings for those markets.
+ * Useful after contract redeployments that invalidate existing markets.
+ */
+export async function clearAllMarketData(): Promise<{ deletedKeys: number }> {
+  if (redis) {
+    // Get all recent market postIds so we can delete their cast mappings
+    const postIds = await redis.lrange(RECENT_MARKETS_KEY, 0, -1);
+    const keysToDelete = [
+      RECENT_MARKETS_KEY,
+      ...postIds.map((postId: string) => getCastMappingKey(postId)),
+    ];
+    if (keysToDelete.length > 0) {
+      await redis.del(...keysToDelete);
+    }
+    return { deletedKeys: keysToDelete.length };
+  }
+  // In-memory fallback
+  const count = recentMarketsStore.length;
+  for (const postId of recentMarketsStore) {
+    castHashStore.delete(getCastMappingKey(postId));
+  }
+  recentMarketsStore.length = 0;
+  return { deletedKeys: count + 1 };
+}
