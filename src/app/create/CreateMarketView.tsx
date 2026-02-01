@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAccount, useConnect, useSwitchChain } from 'wagmi';
 import { useMiniApp } from '@neynar/react';
-import { useFactoryAllowance, useUSDCBalance } from '~/hooks/useBeliefMarketWrite';
+import { useVaultAllowance, useUSDCBalance } from '~/hooks/useBeliefMarketWrite';
 import { useFarcasterApproveUSDC, useFarcasterCreateMarket } from '~/hooks/useFarcasterTransaction';
 import { useMarketAddress, useMarketExists } from '~/hooks/useBeliefMarket';
 import { generatePostId } from '~/lib/postId';
+import { maxUint256 } from 'viem';
 import {
   formatUSDC,
   parseUSDC,
@@ -69,7 +70,7 @@ export function CreateMarketView() {
   const { data: marketExists, isLoading: checkingMarket } = useMarketExists(postId ?? undefined);
 
   // Use wagmi for reading allowance/balance, SDK for writing
-  const { allowance, refetch: refetchAllowance } = useFactoryAllowance();
+  const { allowance, refetch: refetchAllowance } = useVaultAllowance();
   const { balance } = useUSDCBalance();
 
   // Farcaster SDK-based hooks for transactions
@@ -93,7 +94,7 @@ export function CreateMarketView() {
 
   const { data: marketAddress, refetch: refetchMarket } = useMarketAddress(postId ?? undefined);
 
-  const factoryAddress = CONTRACTS[DEFAULT_CHAIN_ID].factory;
+  const vaultAddress = CONTRACTS[DEFAULT_CHAIN_ID].vault;
 
   const needsApproval = (amount: bigint) => {
     if (amount === 0n) return false;
@@ -211,7 +212,7 @@ export function CreateMarketView() {
     if (needsApproval(amountBigInt)) {
       setStep('approve');
       try {
-        await approveUSDC(factoryAddress, amountBigInt);
+        await approveUSDC(vaultAddress, maxUint256);
         // Success will be handled by the useEffect
       } catch (err) {
         console.error('Approval failed:', err);
@@ -485,7 +486,7 @@ export function CreateMarketView() {
 
             {approveError && (
               <button
-                onClick={() => { resetApprove(); approveUSDC(factoryAddress, amountBigInt); }}
+                onClick={() => { resetApprove(); approveUSDC(vaultAddress, maxUint256); }}
                 className="w-full py-3 bg-slate-700 hover:bg-slate-800 rounded-xl text-white font-medium transition-colors"
               >
                 Try Again

@@ -92,7 +92,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, onSu
 
     if (needsApproval(amountBigInt)) {
       setStep('approve');
-      approve(marketAddress, amountBigInt);
+      approve();
     } else {
       setStep('commit');
       commit(amountBigInt);
@@ -247,7 +247,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, onSu
                 <button
                   onClick={() => {
                     resetApprove();
-                    approve(marketAddress, amountBigInt);
+                    approve();
                   }}
                   className="w-full py-3 bg-slate-700 hover:bg-slate-800 rounded-xl text-white font-medium transition-colors"
                 >

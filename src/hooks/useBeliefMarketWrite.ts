@@ -3,7 +3,7 @@
  * Uses useSendTransaction for better compatibility with Farcaster frame connector.
  */
 import { useSendTransaction, useWaitForTransactionReceipt, useReadContract, useAccount } from 'wagmi';
-import { encodeFunctionData } from 'viem';
+import { encodeFunctionData, maxUint256 } from 'viem';
 import {
   CONTRACTS,
   BELIEF_FACTORY_ABI,
@@ -16,19 +16,20 @@ import {
 const chainId = DEFAULT_CHAIN_ID;
 
 /**
- * Hook to check and manage USDC allowance for a market.
+ * Hook to check USDC allowance for the BeliefVault (used by both commit and create flows).
  */
-export function useUSDCAllowance(marketAddress: `0x${string}` | undefined) {
+export function useVaultAllowance() {
   const { address: userAddress } = useAccount();
+  const vaultAddress = CONTRACTS[chainId].vault;
 
   const { data: allowance, refetch } = useReadContract({
     address: CONTRACTS[chainId].usdc,
     abi: ERC20_ABI,
     functionName: 'allowance',
-    args: userAddress && marketAddress ? [userAddress, marketAddress] : undefined,
+    args: userAddress ? [userAddress, vaultAddress] : undefined,
     chainId,
     query: {
-      enabled: !!userAddress && !!marketAddress,
+      enabled: !!userAddress,
     },
   });
 
@@ -187,12 +188,13 @@ export function useCommitOppose(marketAddress: `0x${string}` | undefined) {
  * Combined hook for the full commit flow (approve + commit).
  */
 export function useCommitFlow(marketAddress: `0x${string}` | undefined, side: Side) {
-  const { allowance, refetch: refetchAllowance } = useUSDCAllowance(marketAddress);
+  const { allowance, refetch: refetchAllowance } = useVaultAllowance();
   const { balance } = useUSDCBalance();
   const approveHook = useApproveUSDC();
   const supportHook = useCommitSupport(marketAddress);
   const opposeHook = useCommitOppose(marketAddress);
 
+  const vaultAddress = CONTRACTS[chainId].vault;
   const commitHook = side === Side.Support ? supportHook : opposeHook;
 
   const needsApproval = (amount: bigint) => {
@@ -205,6 +207,10 @@ export function useCommitFlow(marketAddress: `0x${string}` | undefined, side: Si
     return balance >= amount;
   };
 
+  const approve = () => {
+    approveHook.approve(vaultAddress, maxUint256);
+  };
+
   return {
     // Allowance
     allowance,
@@ -214,7 +220,7 @@ export function useCommitFlow(marketAddress: `0x${string}` | undefined, side: Si
     balance,
     hasBalance,
     // Approve
-    approve: approveHook.approve,
+    approve,
     approveHash: approveHook.hash,
     isApproving: approveHook.isPending,
     isApproveConfirming: approveHook.isConfirming,
@@ -235,30 +241,6 @@ export function useCommitFlow(marketAddress: `0x${string}` | undefined, side: Si
 /*//////////////////////////////////////////////////////////////
                         FACTORY HOOKS
 //////////////////////////////////////////////////////////////*/
-
-/**
- * Hook to check USDC allowance for the factory (for market creation).
- */
-export function useFactoryAllowance() {
-  const { address: userAddress } = useAccount();
-  const factoryAddress = CONTRACTS[chainId].factory;
-
-  const { data: allowance, refetch } = useReadContract({
-    address: CONTRACTS[chainId].usdc,
-    abi: ERC20_ABI,
-    functionName: 'allowance',
-    args: userAddress ? [userAddress, factoryAddress] : undefined,
-    chainId,
-    query: {
-      enabled: !!userAddress,
-    },
-  });
-
-  return {
-    allowance: allowance as bigint | undefined,
-    refetch,
-  };
-}
 
 /**
  * Hook to create a new belief market.
@@ -315,12 +297,12 @@ export function useCreateMarket() {
  * Combined hook for the full market creation flow (approve + create).
  */
 export function useCreateMarketFlow() {
-  const { allowance, refetch: refetchAllowance } = useFactoryAllowance();
+  const { allowance, refetch: refetchAllowance } = useVaultAllowance();
   const { balance } = useUSDCBalance();
   const approveHook = useApproveUSDC();
   const createHook = useCreateMarket();
 
-  const factoryAddress = CONTRACTS[chainId].factory;
+  const vaultAddress = CONTRACTS[chainId].vault;
 
   const needsApproval = (amount: bigint) => {
     if (amount === 0n) return false;
@@ -334,8 +316,8 @@ export function useCreateMarketFlow() {
     return balance >= amount;
   };
 
-  const approveFactory = (amount: bigint) => {
-    approveHook.approve(factoryAddress, amount);
+  const approveVault = () => {
+    approveHook.approve(vaultAddress, maxUint256);
   };
 
   return {
@@ -347,7 +329,7 @@ export function useCreateMarketFlow() {
     balance,
     hasBalance,
     // Approve
-    approveFactory,
+    approveVault,
     approveHash: approveHook.hash,
     isApproving: approveHook.isPending,
     isApproveConfirming: approveHook.isConfirming,

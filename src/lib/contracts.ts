@@ -6,11 +6,13 @@ import { base, baseSepolia } from 'wagmi/chains';
 export const CONTRACTS = {
   [base.id]: {
     factory: '0x0000000000000000000000000000000000000000' as `0x${string}`, // TODO: Deploy to mainnet
+    vault: '0x0000000000000000000000000000000000000000' as `0x${string}`, // TODO: Deploy to mainnet
     usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as `0x${string}`, // USDC on Base
   },
   [baseSepolia.id]: {
-    factory: '0x37D0E4E15d3b60350B29844E5eb24d3dbaB37282' as `0x${string}`,
-    usdc: '0x4d16DA28F1948770F6e699a250eD763f04640360' as `0x${string}`, // Mock USDC on Base Sepolia
+    factory: '0x789a11Ced3D407aD7CE4ADf1f7bFAf270b470773' as `0x${string}`,
+    vault: '0xa9dd8F720197fED811b746154Ac696B2320756e6' as `0x${string}`,
+    usdc: '0xEfA0e737B993Ae32DCB7c1c5C6878D25EE246cc4' as `0x${string}`, // Mock USDC on Base Sepolia
   },
 } as const;
 
