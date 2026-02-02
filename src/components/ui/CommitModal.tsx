@@ -353,8 +353,8 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
                 className="w-full py-3 bg-slate-700 hover:bg-slate-800 rounded-xl text-white font-medium transition-colors"
                 cast={{
                   text: castText
-                    ? `I just ${side === Side.Support ? 'supported' : 'challenged'} this claim:\n\n"${castText.slice(0, 100)}${castText.length > 100 ? '...' : ''}"\n\nDo you agree? Put your money where your mouth is.`
-                    : `I just ${side === Side.Support ? 'supported' : 'challenged'} a belief market. Do you agree? Put your money where your mouth is.`,
+                    ? `I just ${side === Side.Support ? 'supported' : 'challenged'} this claim with $${formatUSDC(amountBigInt)}:\n\n"${castText.slice(0, 100)}${castText.length > 100 ? '...' : ''}"\n\nDo you agree? Put your money where your mouth is.`
+                    : `I just ${side === Side.Support ? 'supported' : 'challenged'} a belief market with $${formatUSDC(amountBigInt)}. Do you agree? Put your money where your mouth is.`,
                   embeds: [{ path: `/market/${postId}` }],
                 }}
               />

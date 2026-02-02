@@ -10,7 +10,6 @@ import {
   BELIEF_MARKET_ABI,
   DEFAULT_CHAIN_ID,
 } from "~/lib/contracts";
-import { APP_URL } from "~/lib/constants";
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +29,7 @@ export async function GET(request: NextRequest) {
           <h1 tw="text-6xl text-white">Invalid Market</h1>
         </div>
       ),
-      { width: 1200, height: 800 }
+      { width: 1200, height: 630 }
     );
   }
 
@@ -134,10 +133,7 @@ export async function GET(request: NextRequest) {
       <div tw="flex h-full w-full flex-col bg-slate-50">
         {/* Header */}
         <div tw="flex items-center justify-between px-16 py-6 bg-white border-b border-slate-200">
-          <div tw="flex items-center">
-            <img src={`${APP_URL}/logo.png`} width={48} height={34} tw="mr-3" />
-            <div tw="text-3xl font-bold text-slate-800">Serious Social</div>
-          </div>
+          <div tw="text-3xl font-bold text-slate-800">Serious Social</div>
           <div tw="text-xl text-slate-500">Belief Market</div>
         </div>
 
@@ -146,13 +142,6 @@ export async function GET(request: NextRequest) {
           {/* Author */}
           {authorName && (
             <div tw="flex items-center mb-6">
-              {authorPfp && (
-                <img
-                  src={authorPfp}
-                  tw="w-14 h-14 rounded-full mr-4"
-                  alt=""
-                />
-              )}
               <span tw="text-2xl text-slate-600">@{authorName}</span>
             </div>
           )}
@@ -242,7 +231,7 @@ export async function GET(request: NextRequest) {
     ),
     {
       width: 1200,
-      height: 800,
+      height: 630,
     }
   );
 }
