@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAccount, useConnect, useSwitchChain } from 'wagmi';
 import { useMiniApp } from '@neynar/react';
 import { useCommitFlow } from '~/hooks/useBeliefMarketWrite';
+import { ShareButton } from '~/components/ui/Share';
 import { Side, formatUSDC, parseUSDC, DEFAULT_CHAIN_ID, CONTRACTS } from '~/lib/contracts';
 
 interface CommitModalProps {
@@ -12,12 +13,13 @@ interface CommitModalProps {
   side: Side;
   marketAddress: `0x${string}`;
   postId: string;
+  castText?: string;
   onSuccess?: () => void;
 }
 
 type Step = 'input' | 'approve' | 'commit' | 'success';
 
-export function CommitModal({ isOpen, onClose, side, marketAddress, postId, onSuccess }: CommitModalProps) {
+export function CommitModal({ isOpen, onClose, side, marketAddress, postId, castText, onSuccess }: CommitModalProps) {
   const { isConnected, chain, address } = useAccount();
   const { connectors, connect } = useConnect();
   const { switchChain } = useSwitchChain();
@@ -342,11 +344,26 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, onSu
                 </p>
               </div>
 
+              <p className="text-sm text-gray-600">
+                Challenge your friends to weigh in.
+              </p>
+
+              <ShareButton
+                buttonText="Share to Farcaster"
+                className="w-full py-3 bg-slate-700 hover:bg-slate-800 rounded-xl text-white font-medium transition-colors"
+                cast={{
+                  text: castText
+                    ? `I just ${side === Side.Support ? 'supported' : 'challenged'} this claim:\n\n"${castText.slice(0, 100)}${castText.length > 100 ? '...' : ''}"\n\nDo you agree? Put your money where your mouth is.`
+                    : `I just ${side === Side.Support ? 'supported' : 'challenged'} a belief market. Do you agree? Put your money where your mouth is.`,
+                  embeds: [{ path: `/market/${postId}` }],
+                }}
+              />
+
               <button
                 onClick={handleSuccess}
-                className="w-full py-3 bg-slate-700 hover:bg-slate-800 rounded-xl text-white font-medium transition-colors"
+                className="w-full py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
               >
-                Done
+                Skip
               </button>
             </div>
           )}

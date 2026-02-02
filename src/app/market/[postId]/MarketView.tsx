@@ -262,22 +262,20 @@ export function MarketView({ postId, intent }: MarketViewProps) {
 
         {/* Action CTAs */}
         <section className="space-y-3">
-          <button
-            onClick={() => handleOpenModal(Side.Support)}
-            className="w-full py-4 rounded-xl font-medium transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200"
-          >
-            Support this claim
-          </button>
-          <button
-            onClick={() => handleOpenModal(Side.Oppose)}
-            className="w-full py-4 rounded-xl font-medium transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200"
-          >
-            Challenge this claim
-          </button>
-        </section>
-
-        {/* Share */}
-        <section>
+          <div className="flex gap-3">
+            <button
+              onClick={() => handleOpenModal(Side.Support)}
+              className="flex-1 py-4 rounded-xl font-medium transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200"
+            >
+              Support
+            </button>
+            <button
+              onClick={() => handleOpenModal(Side.Oppose)}
+              className="flex-1 py-4 rounded-xl font-medium transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200"
+            >
+              Challenge
+            </button>
+          </div>
           <ShareButton
             buttonText="Share this market"
             className="w-full py-4 rounded-xl font-medium transition-colors bg-slate-700 text-white hover:bg-slate-800"
@@ -335,6 +333,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           side={modalSide}
           marketAddress={marketAddress as `0x${string}`}
           postId={postId}
+          castText={castContent?.text}
           onSuccess={handleCommitSuccess}
         />
       )}
