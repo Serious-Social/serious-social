@@ -156,7 +156,7 @@ export async function GET(request: NextRequest) {
               {/* Unchallenged badge */}
               {opposePool === 0n && supportPool > 0n && (
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-                  <span style={{ fontSize: 18, color: '#b45309', backgroundColor: '#fef3c7', padding: '8px 16px', borderRadius: 9999, fontWeight: 500 }}>
+                  <span style={{ fontSize: 36, color: '#b45309', backgroundColor: '#fef3c7', padding: '12px 32px', borderRadius: 9999, fontWeight: 500 }}>
                     Unchallenged
                   </span>
                 </div>
