@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
   if (!postId) {
     return new ImageResponse(
       (
-        <div tw="flex h-full w-full flex-col justify-center items-center bg-slate-900">
-          <h1 tw="text-6xl text-white">Invalid Market</h1>
+        <div style={{ display: 'flex', width: '100%', height: '100%', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f172a' }}>
+          <h1 style={{ fontSize: 60, color: '#fff' }}>Invalid Market</h1>
         </div>
       ),
       { width: 1200, height: 630 }
@@ -127,105 +127,90 @@ export async function GET(request: NextRequest) {
   const beliefPercent = state?.belief ? Number(state.belief * 100n / BigInt(1e18)) : 50;
   const beliefOpposePercent = 100 - beliefPercent;
 
-  // Use 3:2 aspect ratio for Mini App embeds (1200x800)
   return new ImageResponse(
     (
-      <div tw="flex h-full w-full flex-col bg-slate-50">
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', backgroundColor: '#f8fafc' }}>
         {/* Header */}
-        <div tw="flex items-center justify-between px-16 py-6 bg-white border-b border-slate-200">
-          <div tw="text-3xl font-bold text-slate-800">Serious Social</div>
-          <div tw="text-xl text-slate-500">Belief Market</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 64px', backgroundColor: '#fff', borderBottom: '1px solid #e2e8f0' }}>
+          <div style={{ fontSize: 30, fontWeight: 700, color: '#1e293b' }}>Serious Social</div>
+          <div style={{ fontSize: 20, color: '#64748b' }}>Belief Market</div>
         </div>
 
-        {/* Content - more padding */}
-        <div tw="flex flex-1 flex-col px-16 py-10">
+        {/* Content */}
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '40px 64px' }}>
           {/* Author */}
           {authorName && (
-            <div tw="flex items-center mb-6">
-              <span tw="text-2xl text-slate-600">@{authorName}</span>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
+              <span style={{ fontSize: 24, color: '#475569' }}>@{authorName}</span>
             </div>
           )}
 
           {/* Claim text */}
-          <div tw="flex flex-1 items-center">
-            <p tw="text-4xl text-slate-900 leading-snug">{displayText}</p>
+          <div style={{ display: 'flex', flex: 1, alignItems: 'center' }}>
+            <p style={{ fontSize: 40, color: '#0f172a', lineHeight: 1.4 }}>{displayText}</p>
           </div>
 
           {/* Belief signal bars */}
           {marketExists && (
-            <div tw="flex flex-col mt-10">
-              {/* Unchallenged badge - centered */}
+            <div style={{ display: 'flex', flexDirection: 'column', marginTop: 40 }}>
+              {/* Unchallenged badge */}
               {opposePool === 0n && supportPool > 0n && (
-                <div tw="flex justify-center mb-4">
-                  <span tw="text-lg text-amber-700 bg-amber-100 px-4 py-2 rounded-full font-medium">
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+                  <span style={{ fontSize: 18, color: '#b45309', backgroundColor: '#fef3c7', padding: '8px 16px', borderRadius: 9999, fontWeight: 500 }}>
                     Unchallenged
                   </span>
                 </div>
               )}
 
               {/* Capital bar */}
-              <div tw="flex items-center mb-2">
-                <span tw="text-xl text-slate-500 w-10">$</span>
-                <div tw="flex flex-1 h-3 bg-slate-300 rounded-full overflow-hidden">
-                  <div
-                    tw="flex h-full bg-slate-700 rounded-full"
-                    style={{ width: `${capitalSupportPercent}%` }}
-                  />
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontSize: 20, color: '#64748b', width: 40 }}>$</span>
+                <div style={{ display: 'flex', flex: 1, height: 12, backgroundColor: '#cbd5e1', borderRadius: 9999, overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', height: '100%', width: `${capitalSupportPercent}%`, backgroundColor: '#334155', borderRadius: 9999 }} />
                 </div>
               </div>
 
               {/* Time bar */}
-              <div tw="flex items-center mb-3">
-                <span tw="text-xl text-slate-500 w-10">{"\u23F1"}</span>
-                <div tw="flex flex-1 h-3 bg-slate-300 rounded-full overflow-hidden">
-                  <div
-                    tw="flex h-full bg-slate-700 rounded-full"
-                    style={{ width: `${timeSupportPercent}%` }}
-                  />
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+                <span style={{ fontSize: 20, color: '#64748b', width: 40 }}>{"\u23F1"}</span>
+                <div style={{ display: 'flex', flex: 1, height: 12, backgroundColor: '#cbd5e1', borderRadius: 9999, overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', height: '100%', width: `${timeSupportPercent}%`, backgroundColor: '#334155', borderRadius: 9999 }} />
                 </div>
               </div>
 
               {/* Main belief bar */}
-              <div tw="flex items-center">
-                <div tw="w-10" />
-                <div tw="flex flex-1 h-8 bg-slate-300 rounded-full overflow-hidden">
-                  <div
-                    tw="flex h-full bg-slate-700 rounded-full items-center justify-center"
-                    style={{ width: `${beliefPercent}%`, minWidth: beliefPercent > 5 ? undefined : '40px' }}
-                  >
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <div style={{ width: 40 }} />
+                <div style={{ display: 'flex', flex: 1, height: 32, backgroundColor: '#cbd5e1', borderRadius: 9999, overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', height: '100%', width: `${Math.max(beliefPercent, 5)}%`, backgroundColor: '#334155', borderRadius: 9999, alignItems: 'center', justifyContent: 'center' }}>
                     {beliefPercent > 10 && (
-                      <span tw="text-sm font-bold text-white">{beliefPercent}%</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{beliefPercent}%</span>
                     )}
                   </div>
-                  {beliefPercent <= 10 && beliefOpposePercent > 10 && (
-                    <div tw="flex items-center justify-end flex-1">
-                      <span tw="text-sm font-bold text-slate-600 mr-2">{beliefOpposePercent}%</span>
-                    </div>
-                  )}
                 </div>
               </div>
 
               {/* Support / Challenge labels */}
-              <div tw="flex mt-2">
-                <div tw="w-10" />
-                <div tw="flex flex-1 justify-between">
-                  <span tw="text-xl font-medium text-slate-700">Support</span>
-                  <span tw="text-xl font-medium text-slate-700">Challenge</span>
+              <div style={{ display: 'flex', marginTop: 8 }}>
+                <div style={{ width: 40 }} />
+                <div style={{ display: 'flex', flex: 1, justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 20, fontWeight: 500, color: '#334155' }}>Support</span>
+                  <span style={{ fontSize: 20, fontWeight: 500, color: '#334155' }}>Challenge</span>
                 </div>
               </div>
             </div>
           )}
 
           {!marketExists && (
-            <div tw="flex mt-10 px-6 py-4 bg-amber-100 rounded-xl">
-              <span tw="text-xl text-amber-800">Market not yet created</span>
+            <div style={{ display: 'flex', marginTop: 40, padding: '16px 24px', backgroundColor: '#fef3c7', borderRadius: 12 }}>
+              <span style={{ fontSize: 20, color: '#92400e' }}>Market not yet created</span>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div tw="flex items-center justify-center px-16 py-6 bg-slate-100 border-t border-slate-200">
-          <span tw="text-2xl text-slate-500 font-medium">Put your money where your mouth is</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 64px', backgroundColor: '#f1f5f9', borderTop: '1px solid #e2e8f0' }}>
+          <span style={{ fontSize: 24, color: '#64748b', fontWeight: 500 }}>Put your money where your mouth is</span>
         </div>
       </div>
     ),
