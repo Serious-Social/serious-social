@@ -93,19 +93,12 @@ export function BeliefCurve({ state, size = 'full', onInfoClick, beliefChange24h
 
   return (
     <div className="space-y-4">
-      {/* Status badge */}
-      {(status === 'unchallenged' || status === 'contested') && (
-        <div className="flex justify-center">
-          <StatusBadge status={status} />
-        </div>
-      )}
-
       {/* Capital & Time bars */}
       {totalPrincipal > 0n && (
         <div className="space-y-3">
           {/* Capital bar */}
           <div className="space-y-1">
-            <span className="text-xs text-gray-500 font-medium">💰 Capital Conviction</span>
+            <span className="text-sm text-gray-500 font-medium">💰 Capital Conviction</span>
             <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden flex">
               <div
                 className="bg-slate-600 transition-all duration-500"
@@ -120,7 +113,7 @@ export function BeliefCurve({ state, size = 'full', onInfoClick, beliefChange24h
 
           {/* Time bar */}
           <div className="space-y-1">
-            <span className="text-xs text-gray-500 font-medium">⏳ Time Conviction</span>
+            <span className="text-sm text-gray-500 font-medium">⏳ Time Conviction</span>
             <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden flex">
               <div
                 className="bg-slate-600 transition-all duration-500"
@@ -137,7 +130,7 @@ export function BeliefCurve({ state, size = 'full', onInfoClick, beliefChange24h
 
       {/* Main belief bar */}
       <div className="space-y-2">
-        <span className="text-xs text-gray-500 font-medium">
+        <span className="text-sm text-gray-500 font-medium">
           ⚖️ Net Belief Signal
           {beliefChange24h != null && beliefChange24h !== 0 && (
             <span className={`ml-1.5 ${beliefChange24h > 0 ? 'text-slate-600' : 'text-amber-600'}`}>
@@ -226,7 +219,7 @@ export function BeliefCurve({ state, size = 'full', onInfoClick, beliefChange24h
   );
 }
 
-function StatusBadge({ status }: { status: 'no_market' | 'unchallenged' | 'contested' }) {
+export function StatusBadge({ status }: { status: 'no_market' | 'unchallenged' | 'contested' }) {
   const styles = {
     no_market: 'bg-gray-100 text-gray-600',
     unchallenged: 'bg-amber-50 text-amber-700 border border-amber-200',
@@ -240,7 +233,7 @@ function StatusBadge({ status }: { status: 'no_market' | 'unchallenged' | 'conte
   };
 
   return (
-    <span className={`px-4 py-1.5 rounded-full text-base font-medium ${styles[status]}`}>
+    <span className={`px-3 py-1 rounded-full text-xs font-medium ${styles[status]}`}>
       {labels[status]}
     </span>
   );

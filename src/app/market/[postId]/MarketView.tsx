@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { useBeliefMarket, useUserPositionDetails, usePendingRewards, useMarketParams } from '~/hooks/useBeliefMarket';
 import { useFarcasterWithdraw, useFarcasterClaimRewards } from '~/hooks/useFarcasterTransaction';
-import { BeliefCurve, type ProfileInfo } from '~/components/ui/BeliefCurve';
+import { BeliefCurve, StatusBadge, type ProfileInfo } from '~/components/ui/BeliefCurve';
 import { CommitModal } from '~/components/ui/CommitModal';
 import { ShareButton } from '~/components/ui/Share';
-import { formatUSDC, Side, Position } from '~/lib/contracts';
+import { formatUSDC, Side, Position, getMarketStatus } from '~/lib/contracts';
 import { useAccount } from 'wagmi';
 import { useState, useEffect, useRef } from 'react';
 
@@ -224,7 +224,12 @@ export function MarketView({ postId, intent }: MarketViewProps) {
 
         {/* Belief curve */}
         <section className="bg-white rounded-xl p-4 shadow-sm">
-          <h2 className="text-sm font-medium text-gray-500 mb-4">Belief Signal</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-medium text-gray-500">Belief Signal</h2>
+            {state && getMarketStatus(state) !== 'no_market' && (
+              <StatusBadge status={getMarketStatus(state)} />
+            )}
+          </div>
           <BeliefCurve
             state={state ?? null}
             beliefChange24h={beliefChange24h}
