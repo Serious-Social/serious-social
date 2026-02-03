@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
       try {
         const client = getNeynarClient();
         const response = await client.fetchBulkCasts({ casts: castHashes });
-        for (const cast of response.casts) {
+        for (const cast of response.result.casts) {
           castMap.set(cast.hash, {
             text: cast.text,
             author: {
