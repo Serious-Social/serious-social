@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { postId, castHash, authorFid } = body;
+    const { postId, castHash, authorFid, text, authorUsername, authorDisplayName, authorPfpUrl } = body;
 
     if (!postId || !castHash || authorFid === undefined) {
       return NextResponse.json(
@@ -71,6 +71,10 @@ export async function POST(request: NextRequest) {
       castHash,
       authorFid,
       createdAt: Date.now(),
+      ...(text != null && { text }),
+      ...(authorUsername != null && { authorUsername }),
+      ...(authorDisplayName != null && { authorDisplayName }),
+      ...(authorPfpUrl != null && { authorPfpUrl }),
     };
 
     await setCastMapping(postId, mapping);

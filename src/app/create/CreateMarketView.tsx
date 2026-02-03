@@ -184,6 +184,10 @@ export function CreateMarketView() {
           postId,
           castHash: selectedCast.hash,
           authorFid: selectedCast.author.fid,
+          text: selectedCast.text,
+          authorUsername: selectedCast.author.username,
+          authorDisplayName: selectedCast.author.displayName,
+          authorPfpUrl: selectedCast.author.pfpUrl,
         }),
       }).catch(err => {
         console.error('Failed to store cast mapping:', err);

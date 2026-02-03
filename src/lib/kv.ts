@@ -62,6 +62,10 @@ export interface CastMapping {
   castHash: string;
   authorFid: number;
   createdAt: number;
+  text?: string;
+  authorUsername?: string;
+  authorDisplayName?: string;
+  authorPfpUrl?: string;
 }
 
 function getCastMappingKey(postId: string): string {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPublicClient, http } from 'viem';
 import { baseSepolia } from 'viem/chains';
-import { getRecentMarkets, getCastMapping, getBeliefSnapshots, BeliefSnapshotEntry } from '~/lib/kv';
+import { getRecentMarkets, getCastMapping, setCastMapping, getBeliefSnapshots, BeliefSnapshotEntry } from '~/lib/kv';
 import { getNeynarClient } from '~/lib/neynar';
 import {
   CONTRACTS,
@@ -71,28 +71,65 @@ export async function GET(request: NextRequest) {
       (m): m is { postId: string; mapping: NonNullable<typeof m.mapping> } => m.mapping !== null
     );
 
-    // Bulk-fetch all casts in a single Neynar API call
-    const castHashes = validMappings.map((m) => m.mapping.castHash);
+    // Build cast data from stored mappings first, fall back to Neynar for old mappings missing text
     const castMap = new Map<string, MarketData['cast']>();
+    const missingMappings: { postId: string; castHash: string; authorFid: number }[] = [];
 
-    if (castHashes.length > 0) {
-      try {
-        const client = getNeynarClient();
-        const response = await client.fetchBulkCasts({ casts: castHashes });
-        for (const cast of response.result.casts) {
-          castMap.set(cast.hash, {
-            text: cast.text,
-            author: {
-              fid: cast.author.fid,
-              username: cast.author.username,
-              displayName: cast.author.display_name || cast.author.username,
-              pfpUrl: cast.author.pfp_url || '',
-            },
-          });
-        }
-      } catch (e) {
-        console.error('Bulk cast fetch failed:', e);
+    for (const { postId, mapping } of validMappings) {
+      if (mapping.text) {
+        castMap.set(mapping.castHash, {
+          text: mapping.text,
+          author: {
+            fid: mapping.authorFid,
+            username: mapping.authorUsername || '',
+            displayName: mapping.authorDisplayName || mapping.authorUsername || '',
+            pfpUrl: mapping.authorPfpUrl || '',
+          },
+        });
+      } else {
+        missingMappings.push({ postId, castHash: mapping.castHash, authorFid: mapping.authorFid });
       }
+    }
+
+    // Fallback: fetch old mappings individually from Neynar and backfill Redis
+    if (missingMappings.length > 0) {
+      const client = getNeynarClient();
+      await Promise.all(
+        missingMappings.map(async ({ postId, castHash, authorFid }) => {
+          try {
+            const response = await client.lookupCastByHashOrWarpcastUrl({
+              identifier: castHash,
+              type: 'hash',
+            });
+            const cast = response.cast;
+            if (cast) {
+              const castData: MarketData['cast'] = {
+                text: cast.text,
+                author: {
+                  fid: cast.author.fid,
+                  username: cast.author.username,
+                  displayName: cast.author.display_name || cast.author.username,
+                  pfpUrl: cast.author.pfp_url || '',
+                },
+              };
+              castMap.set(castHash, castData);
+
+              // Backfill Redis so future requests skip Neynar
+              setCastMapping(postId, {
+                castHash,
+                authorFid,
+                createdAt: Date.now(),
+                text: cast.text,
+                authorUsername: cast.author.username,
+                authorDisplayName: cast.author.display_name || cast.author.username,
+                authorPfpUrl: cast.author.pfp_url || '',
+              }).catch((e) => console.error(`Failed to backfill cast mapping for ${postId}:`, e));
+            }
+          } catch (e) {
+            console.error(`Cast fetch failed for ${castHash}:`, e);
+          }
+        })
+      );
     }
 
     // Fetch on-chain data for each market in parallel
