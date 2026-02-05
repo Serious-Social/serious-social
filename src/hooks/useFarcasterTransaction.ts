@@ -233,6 +233,66 @@ export function useFarcasterWithdraw() {
 }
 
 /**
+ * Hook to commit support using the Farcaster SDK provider.
+ */
+export function useFarcasterCommitSupport() {
+  const { sendTransaction, hash, isPending, isConfirming, isSuccess, error, reset } = useFarcasterTransaction();
+
+  const commit = useCallback(async (marketAddress: `0x${string}`, amount: bigint) => {
+    const data = encodeFunctionData({
+      abi: BELIEF_MARKET_ABI,
+      functionName: 'commitSupport',
+      args: [amount],
+    });
+
+    return sendTransaction({
+      to: marketAddress,
+      data,
+    });
+  }, [sendTransaction]);
+
+  return {
+    commit,
+    hash,
+    isPending,
+    isConfirming,
+    isSuccess,
+    error,
+    reset,
+  };
+}
+
+/**
+ * Hook to commit oppose using the Farcaster SDK provider.
+ */
+export function useFarcasterCommitOppose() {
+  const { sendTransaction, hash, isPending, isConfirming, isSuccess, error, reset } = useFarcasterTransaction();
+
+  const commit = useCallback(async (marketAddress: `0x${string}`, amount: bigint) => {
+    const data = encodeFunctionData({
+      abi: BELIEF_MARKET_ABI,
+      functionName: 'commitOppose',
+      args: [amount],
+    });
+
+    return sendTransaction({
+      to: marketAddress,
+      data,
+    });
+  }, [sendTransaction]);
+
+  return {
+    commit,
+    hash,
+    isPending,
+    isConfirming,
+    isSuccess,
+    error,
+    reset,
+  };
+}
+
+/**
  * Hook to claim rewards from a position using the Farcaster SDK provider.
  */
 export function useFarcasterClaimRewards() {

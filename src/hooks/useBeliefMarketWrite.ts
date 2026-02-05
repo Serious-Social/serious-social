@@ -1,17 +1,22 @@
 /**
  * Write hooks for Belief Market transactions.
- * Uses useSendTransaction for better compatibility with Farcaster frame connector.
+ * Uses Farcaster SDK's ethProvider directly to bypass wagmi connector rehydration issues.
+ * Read hooks still use wagmi's useReadContract (reads don't need a connector).
  */
-import { useSendTransaction, useWaitForTransactionReceipt, useReadContract, useAccount } from 'wagmi';
-import { encodeFunctionData, maxUint256 } from 'viem';
+import { useReadContract, useAccount } from 'wagmi';
+import { maxUint256 } from 'viem';
 import {
   CONTRACTS,
-  BELIEF_FACTORY_ABI,
-  BELIEF_MARKET_ABI,
   ERC20_ABI,
   DEFAULT_CHAIN_ID,
   Side,
 } from '~/lib/contracts';
+import {
+  useFarcasterApproveUSDC,
+  useFarcasterCommitSupport,
+  useFarcasterCommitOppose,
+  useFarcasterCreateMarket,
+} from './useFarcasterTransaction';
 
 const chainId = DEFAULT_CHAIN_ID;
 
@@ -63,81 +68,14 @@ export function useUSDCBalance() {
 }
 
 /**
- * Hook to approve USDC spending.
- */
-export function useApproveUSDC() {
-  const { connector } = useAccount();
-  const { sendTransaction, data: hash, isPending, error, reset } = useSendTransaction();
-
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash,
-  });
-
-  const approve = (spender: `0x${string}`, amount: bigint) => {
-    const data = encodeFunctionData({
-      abi: ERC20_ABI,
-      functionName: 'approve',
-      args: [spender, amount],
-    });
-
-    console.log('[useApproveUSDC] Sending approval transaction:', {
-      to: CONTRACTS[chainId].usdc,
-      spender,
-      amount: amount.toString(),
-    });
-
-    sendTransaction(
-      {
-        to: CONTRACTS[chainId].usdc,
-        data,
-        connector,
-      },
-      {
-        onSuccess: (hash) => {
-          console.log('[useApproveUSDC] Transaction submitted:', hash);
-        },
-        onError: (err) => {
-          console.error('[useApproveUSDC] Transaction error:', err);
-        },
-      }
-    );
-  };
-
-  return {
-    approve,
-    hash,
-    isPending,
-    isConfirming,
-    isSuccess,
-    error,
-    reset,
-  };
-}
-
-/**
  * Hook to commit to support side.
  */
-export function useCommitSupport(marketAddress: `0x${string}` | undefined) {
-  const { connector } = useAccount();
-  const { sendTransaction, data: hash, isPending, error, reset } = useSendTransaction();
-
-  const { isLoading: isConfirming, isSuccess, data: receipt } = useWaitForTransactionReceipt({
-    hash,
-  });
+function useCommitSupport(marketAddress: `0x${string}` | undefined) {
+  const { commit: sdkCommit, hash, isPending, isConfirming, isSuccess, error, reset } = useFarcasterCommitSupport();
 
   const commit = (amount: bigint) => {
     if (!marketAddress) return;
-    const data = encodeFunctionData({
-      abi: BELIEF_MARKET_ABI,
-      functionName: 'commitSupport',
-      args: [amount],
-    });
-
-    sendTransaction({
-      to: marketAddress,
-      data,
-      connector,
-    });
+    sdkCommit(marketAddress, amount);
   };
 
   return {
@@ -146,7 +84,6 @@ export function useCommitSupport(marketAddress: `0x${string}` | undefined) {
     isPending,
     isConfirming,
     isSuccess,
-    receipt,
     error,
     reset,
   };
@@ -155,27 +92,12 @@ export function useCommitSupport(marketAddress: `0x${string}` | undefined) {
 /**
  * Hook to commit to oppose side.
  */
-export function useCommitOppose(marketAddress: `0x${string}` | undefined) {
-  const { connector } = useAccount();
-  const { sendTransaction, data: hash, isPending, error, reset } = useSendTransaction();
-
-  const { isLoading: isConfirming, isSuccess, data: receipt } = useWaitForTransactionReceipt({
-    hash,
-  });
+function useCommitOppose(marketAddress: `0x${string}` | undefined) {
+  const { commit: sdkCommit, hash, isPending, isConfirming, isSuccess, error, reset } = useFarcasterCommitOppose();
 
   const commit = (amount: bigint) => {
     if (!marketAddress) return;
-    const data = encodeFunctionData({
-      abi: BELIEF_MARKET_ABI,
-      functionName: 'commitOppose',
-      args: [amount],
-    });
-
-    sendTransaction({
-      to: marketAddress,
-      data,
-      connector,
-    });
+    sdkCommit(marketAddress, amount);
   };
 
   return {
@@ -184,7 +106,6 @@ export function useCommitOppose(marketAddress: `0x${string}` | undefined) {
     isPending,
     isConfirming,
     isSuccess,
-    receipt,
     error,
     reset,
   };
@@ -196,7 +117,7 @@ export function useCommitOppose(marketAddress: `0x${string}` | undefined) {
 export function useCommitFlow(marketAddress: `0x${string}` | undefined, side: Side) {
   const { allowance, refetch: refetchAllowance } = useVaultAllowance();
   const { balance } = useUSDCBalance();
-  const approveHook = useApproveUSDC();
+  const approveHook = useFarcasterApproveUSDC();
   const supportHook = useCommitSupport(marketAddress);
   const opposeHook = useCommitOppose(marketAddress);
 
@@ -249,66 +170,13 @@ export function useCommitFlow(marketAddress: `0x${string}` | undefined, side: Si
 //////////////////////////////////////////////////////////////*/
 
 /**
- * Hook to create a new belief market.
- */
-export function useCreateMarket() {
-  const { connector } = useAccount();
-  const { sendTransaction, data: hash, isPending, error, reset } = useSendTransaction();
-
-  const { isLoading: isConfirming, isSuccess, data: receipt } = useWaitForTransactionReceipt({
-    hash,
-  });
-
-  const createMarket = (postId: `0x${string}`, initialCommitment: bigint) => {
-    const data = encodeFunctionData({
-      abi: BELIEF_FACTORY_ABI,
-      functionName: 'createMarket',
-      args: [postId, initialCommitment],
-    });
-
-    console.log('[useCreateMarket] Creating market:', {
-      to: CONTRACTS[chainId].factory,
-      postId,
-      initialCommitment: initialCommitment.toString(),
-    });
-
-    sendTransaction(
-      {
-        to: CONTRACTS[chainId].factory,
-        data,
-        connector,
-      },
-      {
-        onSuccess: (hash) => {
-          console.log('[useCreateMarket] Transaction submitted:', hash);
-        },
-        onError: (err) => {
-          console.error('[useCreateMarket] Transaction error:', err);
-        },
-      }
-    );
-  };
-
-  return {
-    createMarket,
-    hash,
-    isPending,
-    isConfirming,
-    isSuccess,
-    receipt,
-    error,
-    reset,
-  };
-}
-
-/**
  * Combined hook for the full market creation flow (approve + create).
  */
 export function useCreateMarketFlow() {
   const { allowance, refetch: refetchAllowance } = useVaultAllowance();
   const { balance } = useUSDCBalance();
-  const approveHook = useApproveUSDC();
-  const createHook = useCreateMarket();
+  const approveHook = useFarcasterApproveUSDC();
+  const createHook = useFarcasterCreateMarket();
 
   const vaultAddress = CONTRACTS[chainId].vault;
 
@@ -350,7 +218,6 @@ export function useCreateMarketFlow() {
     isCreating: createHook.isPending,
     isCreateConfirming: createHook.isConfirming,
     isCreateSuccess: createHook.isSuccess,
-    createReceipt: createHook.receipt,
     createError: createHook.error,
     resetCreate: createHook.reset,
   };
