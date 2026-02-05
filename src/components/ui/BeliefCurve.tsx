@@ -104,30 +104,7 @@ export function BeliefCurve({ state, size = 'full', onInfoClick, beliefChange24h
 
   return (
     <div className="space-y-4">
-      {/* Capital & Time bars */}
-      {totalPrincipal > 0n && (
-        <div className="space-y-3">
-          {/* Capital bar */}
-          <div className="space-y-1">
-            <span className="text-sm text-theme-text-muted font-medium flex items-center gap-1.5">
-              <HugeiconsIcon icon={CoinsIcon} size={16} className="text-theme-primary" />
-              Capital Conviction
-            </span>
-            <SegmentedBar percent={capitalSupportPercent} segments={20} />
-          </div>
-
-          {/* Time bar */}
-          <div className="space-y-1">
-            <span className="text-sm text-theme-text-muted font-medium flex items-center gap-1.5">
-              <HugeiconsIcon icon={Clock01Icon} size={16} className="text-theme-primary" />
-              Time Conviction
-            </span>
-            <SegmentedBar percent={timeSupportPercent} segments={20} />
-          </div>
-        </div>
-      )}
-
-      {/* Main belief bar */}
+      {/* Main belief bar - PRIMARY METRIC (shown first per UX spec) */}
       <div className="space-y-2">
         <span className="text-sm text-theme-text-muted font-medium flex items-center gap-1.5">
           <HugeiconsIcon icon={BalanceScaleIcon} size={16} className="text-theme-primary" />
@@ -167,6 +144,29 @@ export function BeliefCurve({ state, size = 'full', onInfoClick, beliefChange24h
           </div>
         )}
       </div>
+
+      {/* Capital & Time conviction bars - SECONDARY (progressive disclosure) */}
+      {totalPrincipal > 0n && (
+        <div className="space-y-3">
+          {/* Capital bar */}
+          <div className="space-y-1">
+            <span className="text-sm text-theme-text-muted font-medium flex items-center gap-1.5">
+              <HugeiconsIcon icon={CoinsIcon} size={16} className="text-theme-primary" />
+              Capital Conviction
+            </span>
+            <SegmentedBar percent={capitalSupportPercent} segments={20} />
+          </div>
+
+          {/* Time bar */}
+          <div className="space-y-1">
+            <span className="text-sm text-theme-text-muted font-medium flex items-center gap-1.5">
+              <HugeiconsIcon icon={Clock01Icon} size={16} className="text-theme-primary" />
+              Time Conviction
+            </span>
+            <SegmentedBar percent={timeSupportPercent} segments={20} />
+          </div>
+        </div>
+      )}
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-4 pt-2">
@@ -208,7 +208,7 @@ export function BeliefCurve({ state, size = 'full', onInfoClick, beliefChange24h
 export function StatusBadge({ status }: { status: 'no_market' | 'unchallenged' | 'contested' }) {
   const styles = {
     no_market: 'bg-theme-surface text-theme-text-muted',
-    unchallenged: 'bg-theme-accent/10 text-theme-accent border border-theme-accent/30',
+    unchallenged: 'bg-theme-accent/10 text-theme-accent border border-theme-accent/30 badge-pulse',
     contested: 'bg-theme-surface text-theme-text border border-theme-border',
   };
 
