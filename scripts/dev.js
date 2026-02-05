@@ -113,9 +113,13 @@ async function startDev() {
   // Start next dev with appropriate configuration
   const nextBin = path.normalize(path.join(projectRoot, 'node_modules', '.bin', 'next'));
 
+  // Use env file values if set, otherwise use local URL
+  const appUrl = process.env.NEXT_PUBLIC_URL || miniAppUrl;
+  const authUrl = process.env.NEXTAUTH_URL || miniAppUrl;
+
   nextDev = spawn(nextBin, ['dev', '-p', port.toString()], {
     stdio: 'inherit',
-    env: { ...process.env, NEXT_PUBLIC_URL: miniAppUrl, NEXTAUTH_URL: miniAppUrl },
+    env: { ...process.env, NEXT_PUBLIC_URL: appUrl, NEXTAUTH_URL: authUrl },
     cwd: projectRoot,
     shell: process.platform === 'win32' // Add shell option for Windows
   });
