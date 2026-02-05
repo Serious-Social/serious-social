@@ -57,11 +57,11 @@ export function HomeTab({ fid }: { fid?: number }) {
   }, [fid]);
 
   return (
-    <div className="px-4 py-4 space-y-6 max-w-lg mx-auto bg-white min-h-screen">
+    <div className="px-4 py-4 space-y-6 max-w-lg mx-auto bg-theme-bg min-h-screen">
       {/* Header section */}
       <div className="text-center space-y-2">
-        <h2 className="text-xl font-semibold text-gray-900">Belief Markets</h2>
-        <p className="text-sm text-gray-600">
+        <h2 className="text-xl font-semibold text-theme-text">Belief Markets</h2>
+        <p className="text-sm text-theme-text-muted">
           Signal conviction with capital. Support claims you believe in or
           challenge those you disagree with.
         </p>
@@ -70,16 +70,16 @@ export function HomeTab({ fid }: { fid?: number }) {
       {/* For You markets */}
       {forYouLoading && fid && (
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-500">For You</h3>
+          <h3 className="text-sm font-medium text-theme-text-muted">For You</h3>
           <div className="text-center py-4">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-slate-600 mx-auto" />
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-theme-primary mx-auto" />
           </div>
         </div>
       )}
 
       {!forYouLoading && forYouMarkets.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-500">For You</h3>
+          <h3 className="text-sm font-medium text-theme-text-muted">For You</h3>
           <div className="space-y-3">
             {forYouMarkets.map((market) => (
               <MarketCard key={market.postId} market={market} />
@@ -90,25 +90,25 @@ export function HomeTab({ fid }: { fid?: number }) {
 
       {/* Recent markets */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-500">Recent Markets</h3>
+        <h3 className="text-sm font-medium text-theme-text-muted">Recent Markets</h3>
 
         {isLoading && (
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-slate-600 mx-auto mb-2" />
-            <p className="text-sm text-gray-500">Loading markets...</p>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-theme-primary mx-auto mb-2" />
+            <p className="text-sm text-theme-text-muted">Loading markets...</p>
           </div>
         )}
 
         {error && (
-          <div className="text-center py-8 text-red-600 text-sm">
+          <div className="text-center py-8 text-red-500 text-sm">
             {error}
           </div>
         )}
 
         {!isLoading && !error && markets.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-sm text-gray-500">No markets yet.</p>
-            <p className="text-xs text-gray-400 mt-1">Be the first to create one!</p>
+            <p className="text-sm text-theme-text-muted">No markets yet.</p>
+            <p className="text-xs text-theme-text-muted/70 mt-1">Be the first to create one!</p>
           </div>
         )}
 
@@ -122,8 +122,8 @@ export function HomeTab({ fid }: { fid?: number }) {
       </div>
 
       {/* Footer */}
-      <div className="pt-4 border-t border-gray-200 text-center">
-        <p className="text-xs text-gray-400">
+      <div className="pt-4 border-t border-theme-border text-center">
+        <p className="text-xs text-theme-text-muted/70">
           Powered by Neynar
         </p>
       </div>
@@ -131,13 +131,13 @@ export function HomeTab({ fid }: { fid?: number }) {
       {/* Floating action buttons */}
       <Link
         href="/about"
-        className="fixed bottom-6 left-6 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl font-bold bg-slate-200 text-slate-700 hover:bg-slate-300 transition-colors"
+        className="fixed bottom-6 left-6 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl font-bold bg-theme-surface border border-theme-border text-theme-text-muted hover:text-theme-text hover:bg-theme-border transition-colors"
       >
         ?
       </Link>
       <Link
         href="/create"
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl font-bold bg-slate-700 text-white hover:bg-slate-800 transition-colors"
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl font-bold bg-gradient-primary text-white hover:opacity-90 transition-colors"
       >
         +
       </Link>
@@ -164,7 +164,7 @@ function MarketCard({ market }: { market: MarketData }) {
   return (
     <Link
       href={`/market/${market.postId}`}
-      className="block bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
+      className="block bg-theme-surface border border-theme-border rounded-xl p-4 hover:border-theme-primary/50 transition-colors"
     >
       {/* Author */}
       {market.cast && (
@@ -176,13 +176,13 @@ function MarketCard({ market }: { market: MarketData }) {
               className="w-6 h-6 rounded-full"
             />
           )}
-          <span className="text-sm text-gray-600">@{market.cast.author.username}</span>
-          <span className="text-xs text-gray-400">{timeAgo}</span>
+          <span className="text-sm text-theme-text-muted">@{market.cast.author.username}</span>
+          <span className="text-xs text-theme-text-muted/70">{timeAgo}</span>
         </div>
       )}
 
       {/* Claim text */}
-      <p className="text-gray-900 text-sm line-clamp-4 mb-3">
+      <p className="text-theme-text text-sm line-clamp-4 mb-3">
         {market.cast?.text || 'Claim not available'}
       </p>
 
@@ -190,30 +190,45 @@ function MarketCard({ market }: { market: MarketData }) {
       {market.exists && market.state && (
         isUnchallenged ? (
           <div className="text-center">
-            <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+            <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-theme-accent/10 text-theme-accent border border-theme-accent/30">
               Unchallenged
             </span>
           </div>
         ) : (
-          <div className="space-y-1">
-            <div className="flex justify-between items-baseline text-xs text-gray-500">
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-baseline text-xs text-theme-text-muted">
               <span>{beliefPercent.toFixed(0)}% support · ${formatUSDC(totalPrincipal)} committed</span>
               {market.beliefChange24h != null && market.beliefChange24h !== 0 && (
-                <span className={`font-medium ${market.beliefChange24h > 0 ? 'text-slate-500' : 'text-amber-600'}`}>
+                <span className={`font-medium ${market.beliefChange24h > 0 ? 'text-theme-positive' : 'text-theme-negative'}`}>
                   {market.beliefChange24h > 0 ? '+' : ''}{market.beliefChange24h}% 24h
                 </span>
               )}
             </div>
-            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden flex">
-              <div className="bg-slate-600" style={{ width: `${beliefPercent}%` }} />
-              <div className="bg-slate-300" style={{ width: `${100 - beliefPercent}%` }} />
+            {/* Segmented belief bar */}
+            <div className="flex gap-0.5 w-full">
+              {Array.from({ length: 20 }).map((_, i) => {
+                const filledSegments = Math.round((beliefPercent / 100) * 20);
+                return (
+                  <div
+                    key={i}
+                    className={`h-2 flex-1 ${
+                      i < filledSegments ? 'bg-theme-positive' : 'bg-theme-border'
+                    }`}
+                  />
+                );
+              })}
+            </div>
+            {/* Support/Challenge labels */}
+            <div className="flex justify-between text-xs text-theme-text-muted">
+              <span>Support</span>
+              <span>Challenge</span>
             </div>
           </div>
         )
       )}
 
       {!market.exists && (
-        <div className="text-xs text-amber-600">
+        <div className="text-xs text-theme-negative">
           Market pending confirmation
         </div>
       )}
@@ -233,4 +248,4 @@ function getTimeAgo(date: Date): string {
   if (diffHours < 24) return `${diffHours}h`;
   if (diffDays < 7) return `${diffDays}d`;
   return date.toLocaleDateString();
-} 
+}
