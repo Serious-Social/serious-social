@@ -62,7 +62,7 @@ export function HomeTab({ fid }: { fid?: number }) {
       <div className="text-center space-y-2">
         <h2 className="text-xl font-semibold text-theme-text">Belief Markets</h2>
         <p className="text-sm text-theme-text-muted">
-          Signal conviction with capital. Support claims you believe in or
+          Signal conviction with capital and time. Support claims you believe in or
           challenge those you disagree with.
         </p>
       </div>
