@@ -66,6 +66,7 @@ export function useUSDCBalance() {
  * Hook to approve USDC spending.
  */
 export function useApproveUSDC() {
+  const { connector } = useAccount();
   const { sendTransaction, data: hash, isPending, error, reset } = useSendTransaction();
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
@@ -89,6 +90,7 @@ export function useApproveUSDC() {
       {
         to: CONTRACTS[chainId].usdc,
         data,
+        connector,
       },
       {
         onSuccess: (hash) => {
@@ -116,6 +118,7 @@ export function useApproveUSDC() {
  * Hook to commit to support side.
  */
 export function useCommitSupport(marketAddress: `0x${string}` | undefined) {
+  const { connector } = useAccount();
   const { sendTransaction, data: hash, isPending, error, reset } = useSendTransaction();
 
   const { isLoading: isConfirming, isSuccess, data: receipt } = useWaitForTransactionReceipt({
@@ -133,6 +136,7 @@ export function useCommitSupport(marketAddress: `0x${string}` | undefined) {
     sendTransaction({
       to: marketAddress,
       data,
+      connector,
     });
   };
 
@@ -152,6 +156,7 @@ export function useCommitSupport(marketAddress: `0x${string}` | undefined) {
  * Hook to commit to oppose side.
  */
 export function useCommitOppose(marketAddress: `0x${string}` | undefined) {
+  const { connector } = useAccount();
   const { sendTransaction, data: hash, isPending, error, reset } = useSendTransaction();
 
   const { isLoading: isConfirming, isSuccess, data: receipt } = useWaitForTransactionReceipt({
@@ -169,6 +174,7 @@ export function useCommitOppose(marketAddress: `0x${string}` | undefined) {
     sendTransaction({
       to: marketAddress,
       data,
+      connector,
     });
   };
 
@@ -246,6 +252,7 @@ export function useCommitFlow(marketAddress: `0x${string}` | undefined, side: Si
  * Hook to create a new belief market.
  */
 export function useCreateMarket() {
+  const { connector } = useAccount();
   const { sendTransaction, data: hash, isPending, error, reset } = useSendTransaction();
 
   const { isLoading: isConfirming, isSuccess, data: receipt } = useWaitForTransactionReceipt({
@@ -269,6 +276,7 @@ export function useCreateMarket() {
       {
         to: CONTRACTS[chainId].factory,
         data,
+        connector,
       },
       {
         onSuccess: (hash) => {
