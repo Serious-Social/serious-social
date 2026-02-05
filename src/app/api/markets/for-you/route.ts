@@ -39,18 +39,28 @@ export async function GET(request: NextRequest) {
 
     // Paginate through following list (up to 500 to keep it bounded)
     for (let i = 0; i < 5; i++) {
-      const response = await client.fetchUserFollowing({
-        fid,
-        limit: 100,
-        ...(cursor ? { cursor } : {}),
-      });
+      try {
+        const response = await client.fetchUserFollowing({
+          fid,
+          limit: 100,
+          ...(cursor ? { cursor } : {}),
+        });
 
-      for (const follower of response.users) {
-        followedFids.add(follower.user.fid);
+        for (const follower of response.users) {
+          followedFids.add(follower.user.fid);
+        }
+
+        if (!response.next?.cursor) break;
+        cursor = response.next.cursor;
+      } catch (e: unknown) {
+        // Handle rate limit / payment errors gracefully
+        const status = (e as { status?: number })?.status;
+        if (status === 402 || status === 429) {
+          console.warn(`Neynar API limit reached (${status}), returning empty for-you feed`);
+          return NextResponse.json({ markets: [] });
+        }
+        throw e;
       }
-
-      if (!response.next?.cursor) break;
-      cursor = response.next.cursor;
     }
 
     if (followedFids.size === 0) {
