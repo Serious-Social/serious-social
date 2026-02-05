@@ -128,7 +128,6 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
   const isWrongChain = chain?.id !== DEFAULT_CHAIN_ID;
 
   const sideLabel = side === Side.Support ? 'Support' : 'Challenge';
-  const sideColor = side === Side.Support ? 'slate-700' : 'slate-500';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -136,9 +135,9 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 overflow-hidden">
+      <div className="relative bg-theme-surface border border-theme-border rounded-2xl shadow-xl max-w-md w-full mx-4 overflow-hidden">
         {/* Header */}
-        <div className={`px-6 py-4 bg-${sideColor} text-white`}>
+        <div className="px-6 py-4 bg-gradient-primary text-white">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">{sideLabel} this claim</h2>
             <button onClick={onClose} className="text-white/80 hover:text-white">
@@ -154,13 +153,13 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
           {/* Not connected */}
           {!isConnected && (
             <div className="text-center space-y-4">
-              <p className="text-gray-600">Connect your wallet to continue</p>
+              <p className="text-theme-text-muted">Connect your wallet to continue</p>
               <div className="space-y-2">
                 {connectors.map((connector) => (
                   <button
                     key={connector.id}
                     onClick={() => connect({ connector })}
-                    className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-700 font-medium transition-colors"
+                    className="w-full py-3 px-4 bg-theme-bg border border-theme-border hover:bg-theme-border rounded-xl text-theme-text font-medium transition-colors"
                   >
                     {connector.name}
                   </button>
@@ -172,10 +171,10 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
           {/* Wrong chain */}
           {isConnected && isWrongChain && (
             <div className="text-center space-y-4">
-              <p className="text-gray-600">Please switch to Base Sepolia</p>
+              <p className="text-theme-text-muted">Please switch to Base Sepolia</p>
               <button
                 onClick={() => switchChain({ chainId: DEFAULT_CHAIN_ID })}
-                className="w-full py-3 px-4 bg-slate-700 hover:bg-slate-800 rounded-xl text-white font-medium transition-colors"
+                className="w-full py-3 px-4 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
               >
                 Switch Network
               </button>
@@ -186,11 +185,11 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
           {isConnected && !isWrongChain && step === 'input' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-theme-text mb-2">
                   Amount (USDC)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-theme-text-muted">$</span>
                   <input
                     type="number"
                     value={amount}
@@ -198,11 +197,11 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
                     placeholder="0.00"
                     min="0"
                     step="0.01"
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
+                    className="w-full pl-8 pr-4 py-3 border border-theme-border bg-theme-bg rounded-xl focus:ring-2 focus:ring-theme-primary focus:border-transparent outline-none text-theme-text placeholder-theme-text-muted"
                   />
                 </div>
                 {balance !== undefined && (
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-theme-text-muted mt-1">
                     Balance: ${formatUSDC(balance)}
                   </p>
                 )}
@@ -210,11 +209,11 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
 
               {/* Warning if insufficient balance */}
               {isValidAmount && !hasBalance(amountBigInt) && (
-                <p className="text-sm text-red-600">Insufficient USDC balance</p>
+                <p className="text-sm text-red-500">Insufficient USDC balance</p>
               )}
 
               {/* Info box */}
-              <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-600">
+              <div className="bg-theme-bg border border-theme-border rounded-lg p-4 text-sm text-theme-text-muted">
                 <p>
                   {side === Side.Support
                     ? 'By supporting, you signal that you believe this claim. Your capital is committed for 30 days. Early withdrawal incurs a 5% penalty.'
@@ -225,7 +224,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
               <button
                 onClick={handleProceed}
                 disabled={!isValidAmount || !hasBalance(amountBigInt)}
-                className="w-full py-4 bg-slate-700 hover:bg-slate-800 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-xl text-white font-medium transition-colors"
+                className="w-full py-4 bg-gradient-primary hover:opacity-90 disabled:bg-theme-border disabled:cursor-not-allowed rounded-xl text-white font-medium transition-colors"
               >
                 {needsApproval(amountBigInt) ? 'Approve & Commit' : 'Commit'}
               </button>
@@ -237,7 +236,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
             <div className="text-center space-y-4">
               <div className="w-16 h-16 mx-auto">
                 {isApproving || isApproveConfirming ? (
-                  <div className="w-full h-full border-4 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
+                  <div className="w-full h-full border-4 border-theme-border border-t-theme-primary rounded-full animate-spin" />
                 ) : approveError ? (
                   <div className="w-full h-full flex items-center justify-center text-red-500">
                     <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -248,10 +247,10 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
               </div>
 
               <div>
-                <p className="font-medium text-gray-900">
+                <p className="font-medium text-theme-text">
                   {isApproving ? 'Confirm in wallet...' : isApproveConfirming ? 'Approving USDC...' : 'Approval failed'}
                 </p>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-theme-text-muted mt-1">
                   {isApproving
                     ? 'Please confirm the approval transaction in your wallet'
                     : isApproveConfirming
@@ -266,7 +265,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
                     resetApprove();
                     approve();
                   }}
-                  className="w-full py-3 bg-slate-700 hover:bg-slate-800 rounded-xl text-white font-medium transition-colors"
+                  className="w-full py-3 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
                 >
                   Try Again
                 </button>
@@ -279,7 +278,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
             <div className="text-center space-y-4">
               <div className="w-16 h-16 mx-auto">
                 {isCommitting || isCommitConfirming ? (
-                  <div className="w-full h-full border-4 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
+                  <div className="w-full h-full border-4 border-theme-border border-t-theme-primary rounded-full animate-spin" />
                 ) : commitError ? (
                   <div className="w-full h-full flex items-center justify-center text-red-500">
                     <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -288,7 +287,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
                   </div>
                 ) : (
                   // Waiting for user to initiate commit after approval
-                  <div className="w-full h-full flex items-center justify-center text-slate-600">
+                  <div className="w-full h-full flex items-center justify-center text-theme-primary">
                     <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
@@ -297,7 +296,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
               </div>
 
               <div>
-                <p className="font-medium text-gray-900">
+                <p className="font-medium text-theme-text">
                   {isCommitting
                     ? 'Confirm in wallet...'
                     : isCommitConfirming
@@ -306,7 +305,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
                         ? 'Commit failed'
                         : 'Ready to commit'}
                 </p>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-theme-text-muted mt-1">
                   {isCommitting
                     ? `Please confirm to ${sideLabel.toLowerCase()} with $${formatUSDC(amountBigInt)}`
                     : isCommitConfirming
@@ -320,7 +319,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
               {!isCommitting && !isCommitConfirming && (
                 <button
                   onClick={commitError ? () => { resetCommit(); handleCommit(); } : handleCommit}
-                  className="w-full py-3 bg-slate-700 hover:bg-slate-800 rounded-xl text-white font-medium transition-colors"
+                  className="w-full py-3 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
                 >
                   {commitError ? 'Try Again' : `Commit $${formatUSDC(amountBigInt)}`}
                 </button>
@@ -331,26 +330,26 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
           {/* Success step */}
           {isConnected && !isWrongChain && step === 'success' && (
             <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto flex items-center justify-center text-green-500">
+              <div className="w-16 h-16 mx-auto flex items-center justify-center text-theme-positive">
                 <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
 
               <div>
-                <p className="font-medium text-gray-900">Commitment successful!</p>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="font-medium text-theme-text">Commitment successful!</p>
+                <p className="text-sm text-theme-text-muted mt-1">
                   You {side === Side.Support ? 'supported' : 'challenged'} this claim with ${formatUSDC(amountBigInt)}
                 </p>
               </div>
 
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-theme-text-muted">
                 Challenge your friends to weigh in.
               </p>
 
               <ShareButton
                 buttonText="Share to Farcaster"
-                className="w-full py-3 bg-slate-700 hover:bg-slate-800 rounded-xl text-white font-medium transition-colors"
+                className="w-full py-3 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
                 cast={{
                   text: castText
                     ? `I just ${side === Side.Support ? 'supported' : 'challenged'} this claim with $${formatUSDC(amountBigInt)}:\n\n"${castText.slice(0, 100)}${castText.length > 100 ? '...' : ''}"\n\nDo you agree? Put your money where your mouth is.`
@@ -361,7 +360,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
 
               <button
                 onClick={handleSuccess}
-                className="w-full py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                className="w-full py-2 text-sm text-theme-text-muted hover:text-theme-text transition-colors"
               >
                 Skip
               </button>

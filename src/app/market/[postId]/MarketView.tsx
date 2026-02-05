@@ -131,10 +131,10 @@ export function MarketView({ postId, intent }: MarketViewProps) {
 
   if (isLoading) {
     return (
-      <div className="px-4 py-6 max-w-lg mx-auto bg-white min-h-screen">
+      <div className="px-4 py-6 max-w-lg mx-auto bg-theme-bg min-h-screen">
         <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading market data...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-theme-primary mx-auto mb-4" />
+          <p className="text-theme-text-muted">Loading market data...</p>
         </div>
       </div>
     );
@@ -142,10 +142,10 @@ export function MarketView({ postId, intent }: MarketViewProps) {
 
   if (error) {
     return (
-      <div className="px-4 py-6 max-w-lg mx-auto bg-white min-h-screen">
+      <div className="px-4 py-6 max-w-lg mx-auto bg-theme-bg min-h-screen">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
+          className="inline-flex items-center gap-2 text-theme-text-muted hover:text-theme-text mb-4"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -153,8 +153,8 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           Back to Home
         </Link>
         <div className="text-center py-8">
-          <h1 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Market</h1>
-          <p className="text-gray-600">{error.message}</p>
+          <h1 className="text-xl font-semibold text-theme-text mb-2">Error Loading Market</h1>
+          <p className="text-theme-text-muted">{error.message}</p>
         </div>
       </div>
     );
@@ -162,10 +162,10 @@ export function MarketView({ postId, intent }: MarketViewProps) {
 
   if (!marketExists) {
     return (
-      <div className="px-4 py-6 max-w-lg mx-auto bg-white min-h-screen">
+      <div className="px-4 py-6 max-w-lg mx-auto bg-theme-bg min-h-screen">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
+          className="inline-flex items-center gap-2 text-theme-text-muted hover:text-theme-text mb-4"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -173,20 +173,20 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           Back to Home
         </Link>
         <div className="text-center py-8">
-          <h1 className="text-xl font-semibold text-gray-900 mb-2">Market Not Found</h1>
-          <p className="text-gray-600">No belief market exists for this post yet.</p>
-          <p className="text-xs text-gray-500 mt-4 font-mono break-all">{postId}</p>
+          <h1 className="text-xl font-semibold text-theme-text mb-2">Market Not Found</h1>
+          <p className="text-theme-text-muted">No belief market exists for this post yet.</p>
+          <p className="text-xs text-theme-text-muted/70 mt-4 font-mono break-all">{postId}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="px-4 py-4 max-w-lg mx-auto bg-white min-h-screen">
+    <div className="px-4 py-4 max-w-lg mx-auto bg-theme-bg min-h-screen overflow-x-hidden">
       {/* Back button */}
       <Link
         href="/"
-        className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
+        className="inline-flex items-center gap-2 text-theme-text-muted hover:text-theme-text mb-4"
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -196,17 +196,17 @@ export function MarketView({ postId, intent }: MarketViewProps) {
 
       <div className="space-y-4">
         {/* Cast content */}
-        <section className="bg-white rounded-xl p-4 shadow-sm">
-          <h2 className="text-sm font-medium text-gray-500 mb-2">Claim</h2>
+        <section className="bg-theme-surface border border-theme-border rounded-xl p-4 overflow-hidden">
+          <h2 className="text-sm font-medium text-theme-text-muted mb-2">Claim</h2>
           {contentLoading ? (
             <div className="animate-pulse">
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-4 bg-theme-border rounded w-3/4 mb-2"></div>
+              <div className="h-4 bg-theme-border rounded w-1/2"></div>
             </div>
           ) : castContent ? (
             <div>
-              <p className="text-gray-900 whitespace-pre-wrap mb-3">{castContent.text}</p>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
+              <p className="text-theme-text whitespace-pre-wrap break-words mb-3">{castContent.text}</p>
+              <div className="flex items-center gap-2 text-xs text-theme-text-muted">
                 {castContent.author.pfpUrl && (
                   <img
                     src={castContent.author.pfpUrl}
@@ -218,14 +218,14 @@ export function MarketView({ postId, intent }: MarketViewProps) {
               </div>
             </div>
           ) : (
-            <p className="text-gray-500 italic">Content not available</p>
+            <p className="text-theme-text-muted italic">Content not available</p>
           )}
         </section>
 
         {/* Belief curve */}
-        <section className="bg-white rounded-xl p-4 shadow-sm">
+        <section className="bg-theme-surface border border-theme-border rounded-xl p-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-medium text-gray-500">Belief Signal</h2>
+            <h2 className="text-sm font-medium text-theme-text-muted">Belief Signal</h2>
             {state && getMarketStatus(state) !== 'no_market' && (
               <StatusBadge status={getMarketStatus(state)} />
             )}
@@ -244,10 +244,15 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           />
         </section>
 
-        {/* User's positions */}
+        {/* User's positions - prominent after staking (per UX spec) */}
         {isConnected && positions.length > 0 && (
-          <section className="bg-white rounded-xl p-4 shadow-sm">
-            <h2 className="text-sm font-medium text-gray-500 mb-3">Your Positions</h2>
+          <section className="bg-gradient-to-br from-theme-primary/10 to-theme-surface border-2 border-theme-primary/30 rounded-xl p-4">
+            <h2 className="text-sm font-semibold text-theme-primary mb-3 flex items-center gap-2">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              Your Positions
+            </h2>
             <div className="space-y-3">
               {positions.map((pos) => (
                 <PositionCard
@@ -265,25 +270,11 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           </section>
         )}
 
-        {/* Action CTAs */}
-        <section className="space-y-3">
-          <div className="flex gap-3">
-            <button
-              onClick={() => handleOpenModal(Side.Support)}
-              className="flex-1 py-4 rounded-xl font-medium transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200"
-            >
-              Support
-            </button>
-            <button
-              onClick={() => handleOpenModal(Side.Oppose)}
-              className="flex-1 py-4 rounded-xl font-medium transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200"
-            >
-              Challenge
-            </button>
-          </div>
+        {/* Share button (secondary action) */}
+        <section>
           <ShareButton
             buttonText="Share this market"
-            className="w-full py-4 rounded-xl font-medium transition-colors bg-slate-700 text-white hover:bg-slate-800"
+            className="w-full py-3 rounded-xl font-medium transition-colors bg-theme-surface border border-theme-border text-theme-text-muted hover:text-theme-text hover:bg-theme-border"
             cast={{
               text: castContent
                 ? `"${castContent.text.slice(0, 100)}${castContent.text.length > 100 ? '...' : ''}"\n\nDo you believe this? Put your money where your mouth is.`
@@ -293,40 +284,61 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           />
         </section>
 
+        {/* Spacer for sticky bottom bar */}
+        <div className="h-20" />
+
         {/* Rules/Info (collapsible) */}
-        <details id="how-it-works" ref={howItWorksRef} className="bg-white rounded-xl shadow-sm">
-          <summary className="px-4 py-3 cursor-pointer text-sm font-medium text-gray-700">
+        <details id="how-it-works" ref={howItWorksRef} className="bg-theme-surface border border-theme-border rounded-xl">
+          <summary className="px-4 py-3 cursor-pointer text-sm font-medium text-theme-text">
             How it works
           </summary>
-          <div className="px-4 pb-4 text-sm text-gray-600 space-y-2">
+          <div className="px-4 pb-4 text-sm text-theme-text-muted space-y-2">
             <p>
-              <strong>Supporting</strong> a claim means staking USDC to signal that you believe it.
+              <strong className="text-theme-text">Supporting</strong> a claim means staking USDC to signal that you believe it.
               Your capital is committed for 30 days.
             </p>
             <p>
-              <strong>Challenging</strong> means staking against the claim. This creates measured
+              <strong className="text-theme-text">Challenging</strong> means staking against the claim. This creates measured
               disagreement and improves signal clarity.
             </p>
             <p>
-              <strong>Early withdrawal.</strong> You can withdraw before the lock period ends,
+              <strong className="text-theme-text">Early withdrawal.</strong> You can withdraw before the lock period ends,
               but a 5% penalty is deducted and added to the reward pool. Early exits also
               forfeit any pending rewards.
             </p>
             <p>
-              <strong>Time matters.</strong> The longer your capital stays committed, the more it
+              <strong className="text-theme-text">Time matters.</strong> The longer your capital stays committed, the more it
               contributes to the belief signal and the more rewards you earn.
             </p>
             <p>
-              <strong>No one wins or loses.</strong> Your principal is returned after the commitment
+              <strong className="text-theme-text">No one wins or loses.</strong> Your principal is returned after the commitment
               period. Rewards come from a shared pool, not from other participants.
             </p>
           </div>
         </details>
 
         {/* Market info */}
-        <div className="text-center text-xs text-gray-400 space-y-1 pt-4 border-t border-gray-200">
+        <div className="text-center text-xs text-theme-text-muted/70 space-y-1 pt-4 border-t border-theme-border">
           <p>Market: {marketAddress?.slice(0, 10)}...{marketAddress?.slice(-8)}</p>
           <p>Post ID: {postId.slice(0, 10)}...{postId.slice(-8)}</p>
+        </div>
+      </div>
+
+      {/* Sticky bottom action bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-theme-bg/95 backdrop-blur-sm border-t border-theme-border p-4 z-40">
+        <div className="max-w-lg mx-auto flex gap-3">
+          <button
+            onClick={() => handleOpenModal(Side.Support)}
+            className="flex-1 py-4 rounded-xl font-medium transition-all bg-theme-surface border border-theme-border text-theme-text hover:bg-theme-border active:scale-[0.98]"
+          >
+            Support
+          </button>
+          <button
+            onClick={() => handleOpenModal(Side.Oppose)}
+            className="flex-1 py-4 rounded-xl font-medium transition-all bg-gradient-primary text-white hover:opacity-90 active:scale-[0.98]"
+          >
+            Challenge
+          </button>
         </div>
       </div>
 
@@ -428,24 +440,24 @@ function PositionCard({ position, marketAddress, minRewardDuration, onAction }: 
   const hasPendingRewards = !!pendingRewards && pendingRewards > 0n;
 
   return (
-    <div className="p-3 bg-gray-50 rounded-lg space-y-3">
+    <div className="p-3 bg-theme-bg border border-theme-border rounded-lg space-y-3">
       {/* Position info row */}
       <div className="flex items-center justify-between">
         <div>
-          <span className={`text-sm font-medium ${position.side === Side.Support ? 'text-slate-700' : 'text-slate-500'}`}>
+          <span className={`text-sm font-medium ${position.side === Side.Support ? 'text-theme-positive' : 'text-theme-negative'}`}>
             {position.side === Side.Support ? 'Support' : 'Challenge'}
           </span>
-          <span className="text-sm text-gray-600 ml-2">${formatUSDC(position.amount)}</span>
+          <span className="text-sm text-theme-text-muted ml-2">${formatUSDC(position.amount)}</span>
         </div>
         <div className="text-right">
           {position.withdrawn ? (
-            <span className="text-xs text-gray-500">Withdrawn</span>
+            <span className="text-xs text-theme-text-muted">Withdrawn</span>
           ) : isLocked ? (
-            <span className="text-xs text-amber-600">
+            <span className="text-xs text-theme-negative">
               Unlocks {unlockDate.toLocaleDateString()}
             </span>
           ) : (
-            <span className="text-xs text-green-600">Ready to withdraw</span>
+            <span className="text-xs text-theme-positive">Ready to withdraw</span>
           )}
         </div>
       </div>
@@ -454,14 +466,14 @@ function PositionCard({ position, marketAddress, minRewardDuration, onAction }: 
       {!position.withdrawn && (
         hasPendingRewards ? (
           <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-500">
-              Pending rewards: <span className="text-green-600 font-medium">${formatUSDC(pendingRewards)}</span>
+            <span className="text-theme-text-muted">
+              Pending rewards: <span className="text-theme-positive font-medium">${formatUSDC(pendingRewards)}</span>
             </span>
           </div>
         ) : rewardsCountdownRemaining != null ? (
           <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-500">
-              Rewards begin in <span className="text-amber-600 font-medium">{formatCountdown(rewardsCountdownRemaining)}</span>
+            <span className="text-theme-text-muted">
+              Rewards begin in <span className="text-theme-negative font-medium">{formatCountdown(rewardsCountdownRemaining)}</span>
             </span>
           </div>
         ) : null
@@ -469,22 +481,22 @@ function PositionCard({ position, marketAddress, minRewardDuration, onAction }: 
 
       {/* Early withdrawal confirmation */}
       {showPenaltyConfirm && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
-          <p className="text-xs text-amber-800">
+        <div className="bg-theme-negative/10 border border-theme-negative/30 rounded-lg p-3 space-y-2">
+          <p className="text-xs text-theme-text">
             Withdrawing early incurs a <strong>5% penalty</strong> on your principal and forfeits pending rewards.
           </p>
           <div className="flex gap-2">
             <button
               onClick={handleWithdraw}
               disabled={isProcessing}
-              className="flex-1 py-2 px-3 text-xs font-medium rounded-lg bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 py-2 px-3 text-xs font-medium rounded-lg bg-theme-negative text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isWithdrawPending ? 'Confirming...' : isWithdrawConfirming ? 'Processing...' : 'Confirm withdraw'}
             </button>
             <button
               onClick={() => setShowPenaltyConfirm(false)}
               disabled={isProcessing}
-              className="flex-1 py-2 px-3 text-xs font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 py-2 px-3 text-xs font-medium rounded-lg bg-theme-surface border border-theme-border text-theme-text hover:bg-theme-border disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Cancel
             </button>
@@ -501,8 +513,8 @@ function PositionCard({ position, marketAddress, minRewardDuration, onAction }: 
               disabled={isProcessing}
               className={`flex-1 py-2 px-3 text-xs font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
                 isLocked
-                  ? 'bg-amber-500 text-white hover:bg-amber-600'
-                  : 'bg-slate-600 text-white hover:bg-slate-700'
+                  ? 'bg-theme-negative text-white hover:opacity-90'
+                  : 'bg-theme-primary text-white hover:opacity-90'
               }`}
             >
               {isWithdrawPending ? 'Confirming...' : isWithdrawConfirming ? 'Processing...' : isLocked ? 'Withdraw early' : 'Withdraw'}
@@ -512,7 +524,7 @@ function PositionCard({ position, marketAddress, minRewardDuration, onAction }: 
             <button
               onClick={handleClaimRewards}
               disabled={isProcessing}
-              className="flex-1 py-2 px-3 text-xs font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 py-2 px-3 text-xs font-medium rounded-lg bg-theme-positive text-theme-bg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isClaimPending ? 'Confirming...' : isClaimConfirming ? 'Processing...' : 'Claim Rewards'}
             </button>
@@ -522,10 +534,10 @@ function PositionCard({ position, marketAddress, minRewardDuration, onAction }: 
 
       {/* Error messages */}
       {withdrawError && (
-        <p className="text-xs text-red-600">Withdraw failed: {withdrawError.message}</p>
+        <p className="text-xs text-red-500">Withdraw failed: {withdrawError.message}</p>
       )}
       {claimError && (
-        <p className="text-xs text-red-600">Claim failed: {claimError.message}</p>
+        <p className="text-xs text-red-500">Claim failed: {claimError.message}</p>
       )}
     </div>
   );

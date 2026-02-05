@@ -48,6 +48,8 @@
     "@farcaster/miniapp-sdk": ">=0.1.6 <1.0.0",
     "@farcaster/miniapp-wagmi-connector": "^1.1.0",
     "@farcaster/quick-auth": ">=0.0.7 <1.0.0",
+    "@hugeicons/core-free-icons": "^3.1.1",
+    "@hugeicons/react": "^1.1.4",
     "@neynar/nodejs-sdk": "^2.19.0",
     "@neynar/react": "^1.2.15",
     "@pigment-css/react": "^0.0.30",

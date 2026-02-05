@@ -252,18 +252,18 @@ export function CreateMarketView() {
   const canProceed = selectedCast && isValidAmount && hasBalance(amountBigInt) && !marketExists;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-theme-bg">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-4 py-4">
+      <header className="bg-theme-surface border-b border-theme-border px-4 py-4">
         <div className="flex items-center justify-between max-w-lg mx-auto">
           {step === 'select' ? (
-            <Link href="/" className="text-gray-500 hover:text-gray-700">
+            <Link href="/" className="text-theme-text-muted hover:text-theme-text">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </Link>
           ) : step !== 'success' ? (
-            <button onClick={handleBack} className="text-gray-500 hover:text-gray-700">
+            <button onClick={handleBack} className="text-theme-text-muted hover:text-theme-text">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
@@ -271,7 +271,7 @@ export function CreateMarketView() {
           ) : (
             <div className="w-5" />
           )}
-          <h1 className="text-lg font-semibold text-gray-900 flex-1 text-center">
+          <h1 className="text-lg font-semibold text-theme-text flex-1 text-center">
             {step === 'select' ? 'Select a Cast' : step === 'success' ? 'Market Created' : 'Create Market'}
           </h1>
           <div className="w-5" />
@@ -281,21 +281,21 @@ export function CreateMarketView() {
       <main className="max-w-lg mx-auto px-4 py-6">
         {/* Not in Farcaster context */}
         {!context?.user?.fid && (
-          <div className="bg-white rounded-xl shadow-sm p-6 text-center">
-            <p className="text-gray-600">Open this app in a Farcaster client to see your casts.</p>
+          <div className="bg-theme-surface border border-theme-border rounded-xl p-6 text-center">
+            <p className="text-theme-text-muted">Open this app in a Farcaster client to see your casts.</p>
           </div>
         )}
 
         {/* Not connected */}
         {context?.user?.fid && !isConnected && (
-          <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-            <p className="text-gray-600 text-center">Connect your wallet to create a market</p>
+          <div className="bg-theme-surface border border-theme-border rounded-xl p-6 space-y-4">
+            <p className="text-theme-text-muted text-center">Connect your wallet to create a market</p>
             <div className="space-y-2">
               {connectors.map((connector) => (
                 <button
                   key={connector.id}
                   onClick={() => connect({ connector })}
-                  className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-700 font-medium transition-colors"
+                  className="w-full py-3 px-4 bg-theme-bg border border-theme-border hover:bg-theme-border rounded-xl text-theme-text font-medium transition-colors"
                 >
                   {connector.name}
                 </button>
@@ -306,11 +306,11 @@ export function CreateMarketView() {
 
         {/* Wrong chain */}
         {context?.user?.fid && isConnected && isWrongChain && (
-          <div className="bg-white rounded-xl shadow-sm p-6 text-center space-y-4">
-            <p className="text-gray-600">Please switch to Base Sepolia</p>
+          <div className="bg-theme-surface border border-theme-border rounded-xl p-6 text-center space-y-4">
+            <p className="text-theme-text-muted">Please switch to Base Sepolia</p>
             <button
               onClick={() => switchChain({ chainId: DEFAULT_CHAIN_ID })}
-              className="w-full py-3 px-4 bg-slate-700 hover:bg-slate-800 rounded-xl text-white font-medium transition-colors"
+              className="w-full py-3 px-4 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
             >
               Switch Network
             </button>
@@ -320,25 +320,25 @@ export function CreateMarketView() {
         {/* Select cast step */}
         {context?.user?.fid && isConnected && !isWrongChain && step === 'select' && (
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-theme-text-muted">
               Choose a cast to create a belief market for. Others will be able to support or challenge your claim.
             </p>
 
             {castsLoading && (
               <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600 mx-auto mb-4" />
-                <p className="text-gray-600">Loading your casts...</p>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-theme-primary mx-auto mb-4" />
+                <p className="text-theme-text-muted">Loading your casts...</p>
               </div>
             )}
 
             {castsError && (
-              <div className="bg-red-50 text-red-700 p-4 rounded-xl">
+              <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl">
                 {castsError}
               </div>
             )}
 
             {!castsLoading && !castsError && casts.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-theme-text-muted">
                 No casts found. Post something on Farcaster first!
               </div>
             )}
@@ -356,7 +356,7 @@ export function CreateMarketView() {
                 {nextCursor && (
                   <div ref={loadMoreRef} className="py-4 text-center">
                     {castsLoadingMore && (
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-slate-600 mx-auto" />
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-theme-primary mx-auto" />
                     )}
                   </div>
                 )}
@@ -369,19 +369,19 @@ export function CreateMarketView() {
         {context?.user?.fid && isConnected && !isWrongChain && step === 'commit' && selectedCast && (
           <div className="space-y-6">
             {/* Selected cast */}
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <p className="text-xs text-gray-500 mb-2">Selected cast</p>
-              <p className="text-gray-900">{selectedCast.text}</p>
+            <div className="bg-theme-surface border border-theme-border rounded-xl p-4">
+              <p className="text-xs text-theme-text-muted mb-2">Selected cast</p>
+              <p className="text-theme-text">{selectedCast.text}</p>
             </div>
 
             {/* Market exists warning */}
             {marketExists && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                <p className="text-amber-800 text-sm">
+              <div className="bg-theme-negative/10 border border-theme-negative/30 rounded-xl p-4">
+                <p className="text-theme-text text-sm">
                   A market already exists for this cast.{' '}
                   <button
                     onClick={handleViewMarket}
-                    className="underline font-medium"
+                    className="underline font-medium text-theme-primary"
                   >
                     View market
                   </button>
@@ -392,13 +392,13 @@ export function CreateMarketView() {
             {/* Commitment input */}
             {!marketExists && (
               <>
-                <div className="bg-white rounded-xl shadow-sm p-4 space-y-4">
+                <div className="bg-theme-surface border border-theme-border rounded-xl p-4 space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-theme-text mb-2">
                       Your Commitment (USDC)
                     </label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-theme-text-muted">$</span>
                       <input
                         type="number"
                         value={amount}
@@ -407,15 +407,15 @@ export function CreateMarketView() {
                         min={MIN_STAKE_DISPLAY}
                         max={MAX_STAKE_DISPLAY}
                         step="0.01"
-                        className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
+                        className="w-full pl-8 pr-4 py-3 border border-theme-border bg-theme-bg rounded-xl focus:ring-2 focus:ring-theme-primary focus:border-transparent outline-none text-theme-text placeholder-theme-text-muted"
                       />
                     </div>
                     <div className="flex justify-between mt-1">
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-theme-text-muted">
                         Min ${MIN_STAKE_DISPLAY}, Max ${MAX_STAKE_DISPLAY}
                       </p>
                       {balance !== undefined && (
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-theme-text-muted">
                           Balance: ${formatUSDC(balance)}
                         </p>
                       )}
@@ -424,20 +424,20 @@ export function CreateMarketView() {
 
                   {/* Validation errors */}
                   {amountNum > 0 && amountNum < MIN_STAKE_DISPLAY && (
-                    <p className="text-sm text-red-600">Minimum commitment is ${MIN_STAKE_DISPLAY}</p>
+                    <p className="text-sm text-red-500">Minimum commitment is ${MIN_STAKE_DISPLAY}</p>
                   )}
                   {amountNum > MAX_STAKE_DISPLAY && (
-                    <p className="text-sm text-red-600">Maximum commitment is ${MAX_STAKE_DISPLAY}</p>
+                    <p className="text-sm text-red-500">Maximum commitment is ${MAX_STAKE_DISPLAY}</p>
                   )}
                   {isValidAmount && !hasBalance(amountBigInt) && (
-                    <p className="text-sm text-red-600">Insufficient USDC balance</p>
+                    <p className="text-sm text-red-500">Insufficient USDC balance</p>
                   )}
                 </div>
 
                 {/* Info box */}
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-700 space-y-2">
-                  <p><strong>By creating this market:</strong></p>
-                  <ul className="list-disc list-inside space-y-1 text-slate-600">
+                <div className="bg-theme-bg border border-theme-border rounded-lg p-4 text-sm text-theme-text-muted space-y-2">
+                  <p><strong className="text-theme-text">By creating this market:</strong></p>
+                  <ul className="list-disc list-inside space-y-1">
                     <li>Your USDC is committed for 30 days (5% early withdrawal penalty)</li>
                     <li>A 2% author premium funds the reward pool</li>
                     <li>Others can support or challenge your claim</li>
@@ -447,7 +447,7 @@ export function CreateMarketView() {
                 <button
                   onClick={handleProceed}
                   disabled={!canProceed || checkingMarket}
-                  className="w-full py-4 bg-slate-700 hover:bg-slate-800 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-xl text-white font-medium transition-colors"
+                  className="w-full py-4 bg-gradient-primary hover:opacity-90 disabled:bg-theme-border disabled:cursor-not-allowed rounded-xl text-white font-medium transition-colors"
                 >
                   {checkingMarket
                     ? 'Checking...'
@@ -462,10 +462,10 @@ export function CreateMarketView() {
 
         {/* Approve step */}
         {context?.user?.fid && isConnected && !isWrongChain && step === 'approve' && (
-          <div className="bg-white rounded-xl shadow-sm p-6 text-center space-y-4">
+          <div className="bg-theme-surface border border-theme-border rounded-xl p-6 text-center space-y-4">
             <div className="w-16 h-16 mx-auto">
               {isApproving || isApproveConfirming ? (
-                <div className="w-full h-full border-4 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
+                <div className="w-full h-full border-4 border-theme-border border-t-theme-primary rounded-full animate-spin" />
               ) : approveError ? (
                 <div className="w-full h-full flex items-center justify-center text-red-500">
                   <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -476,10 +476,10 @@ export function CreateMarketView() {
             </div>
 
             <div>
-              <p className="font-medium text-gray-900">
+              <p className="font-medium text-theme-text">
                 {isApproving ? 'Confirm in wallet...' : isApproveConfirming ? 'Approving USDC...' : 'Approval failed'}
               </p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-theme-text-muted mt-1">
                 {isApproving
                   ? 'Please confirm the approval transaction'
                   : isApproveConfirming
@@ -491,7 +491,7 @@ export function CreateMarketView() {
             {approveError && (
               <button
                 onClick={() => { resetApprove(); approveUSDC(vaultAddress, maxUint256); }}
-                className="w-full py-3 bg-slate-700 hover:bg-slate-800 rounded-xl text-white font-medium transition-colors"
+                className="w-full py-3 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
               >
                 Try Again
               </button>
@@ -501,10 +501,10 @@ export function CreateMarketView() {
 
         {/* Create step */}
         {context?.user?.fid && isConnected && !isWrongChain && step === 'create' && (
-          <div className="bg-white rounded-xl shadow-sm p-6 text-center space-y-4">
+          <div className="bg-theme-surface border border-theme-border rounded-xl p-6 text-center space-y-4">
             <div className="w-16 h-16 mx-auto">
               {isCreating || isCreateConfirming ? (
-                <div className="w-full h-full border-4 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
+                <div className="w-full h-full border-4 border-theme-border border-t-theme-primary rounded-full animate-spin" />
               ) : createError ? (
                 <div className="w-full h-full flex items-center justify-center text-red-500">
                   <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -512,7 +512,7 @@ export function CreateMarketView() {
                   </svg>
                 </div>
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-slate-600">
+                <div className="w-full h-full flex items-center justify-center text-theme-primary">
                   <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
@@ -521,7 +521,7 @@ export function CreateMarketView() {
             </div>
 
             <div>
-              <p className="font-medium text-gray-900">
+              <p className="font-medium text-theme-text">
                 {isCreating
                   ? 'Confirm in wallet...'
                   : isCreateConfirming
@@ -530,7 +530,7 @@ export function CreateMarketView() {
                       ? 'Creation failed'
                       : 'Ready to create'}
               </p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-theme-text-muted mt-1">
                 {isCreating
                   ? `Committing $${formatUSDC(amountBigInt)} to create your belief market`
                   : isCreateConfirming
@@ -544,7 +544,7 @@ export function CreateMarketView() {
             {!isCreating && !isCreateConfirming && (
               <button
                 onClick={createError ? () => { resetCreate(); handleCreate(); } : handleCreate}
-                className="w-full py-3 bg-slate-700 hover:bg-slate-800 rounded-xl text-white font-medium transition-colors"
+                className="w-full py-3 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
               >
                 {createError ? 'Try Again' : 'Create Market'}
               </button>
@@ -554,33 +554,33 @@ export function CreateMarketView() {
 
         {/* Success step */}
         {context?.user?.fid && isConnected && !isWrongChain && step === 'success' && selectedCast && (
-          <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
+          <div className="bg-theme-surface border border-theme-border rounded-xl p-6 space-y-6">
             <div className="text-center">
-              <div className="w-16 h-16 mx-auto flex items-center justify-center text-green-500 mb-4">
+              <div className="w-16 h-16 mx-auto flex items-center justify-center text-theme-positive mb-4">
                 <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <p className="font-medium text-gray-900 text-lg">Market Created!</p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="font-medium text-theme-text text-lg">Market Created!</p>
+              <p className="text-sm text-theme-text-muted mt-1">
                 Your belief market is live. Share it to invite others.
               </p>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-xs text-gray-500 mb-1">Your claim</p>
-              <p className="text-sm text-gray-900 line-clamp-3">{selectedCast.text}</p>
+            <div className="bg-theme-bg border border-theme-border rounded-lg p-4">
+              <p className="text-xs text-theme-text-muted mb-1">Your claim</p>
+              <p className="text-sm text-theme-text line-clamp-3">{selectedCast.text}</p>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+            <div className="bg-theme-bg border border-theme-border rounded-lg p-4 space-y-2">
               <div>
-                <p className="text-xs text-gray-500">Your commitment</p>
-                <p className="text-sm text-gray-900 font-medium">${formatUSDC(amountBigInt)}</p>
+                <p className="text-xs text-theme-text-muted">Your commitment</p>
+                <p className="text-sm text-theme-text font-medium">${formatUSDC(amountBigInt)}</p>
               </div>
               {marketAddress && marketAddress !== '0x0000000000000000000000000000000000000000' && (
                 <div>
-                  <p className="text-xs text-gray-500">Market</p>
-                  <code className="text-xs text-gray-700 break-all">{marketAddress}</code>
+                  <p className="text-xs text-theme-text-muted">Market</p>
+                  <code className="text-xs text-theme-text-muted/70 break-all">{marketAddress}</code>
                 </div>
               )}
             </div>
@@ -588,7 +588,7 @@ export function CreateMarketView() {
             <div className="space-y-3">
               <ShareButton
                 buttonText="Share on Farcaster"
-                className="w-full py-3 bg-slate-700 hover:bg-slate-800 rounded-xl text-white font-medium transition-colors"
+                className="w-full py-3 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
                 cast={{
                   text: `I just put $${formatUSDC(amountBigInt)} behind my claim:\n\n"${selectedCast.text.slice(0, 100)}${selectedCast.text.length > 100 ? '...' : ''}"\n\nDo you agree? Commit to your stance.`,
                   embeds: [{ path: `/market/${postId}` }],
@@ -596,7 +596,7 @@ export function CreateMarketView() {
               />
               <button
                 onClick={handleViewMarket}
-                className="w-full py-3 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-700 font-medium transition-colors"
+                className="w-full py-3 bg-theme-bg border border-theme-border hover:bg-theme-border rounded-xl text-theme-text font-medium transition-colors"
               >
                 View Market
               </button>
@@ -614,10 +614,10 @@ function CastCard({ cast, onClick }: { cast: Cast; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="w-full bg-white rounded-xl shadow-sm p-4 text-left hover:bg-gray-50 transition-colors"
+      className="w-full bg-theme-surface border border-theme-border rounded-xl p-4 text-left hover:border-theme-primary/50 transition-colors"
     >
-      <p className="text-gray-900 line-clamp-3 mb-2">{cast.text}</p>
-      <div className="flex items-center justify-between text-xs text-gray-500">
+      <p className="text-theme-text line-clamp-3 mb-2">{cast.text}</p>
+      <div className="flex items-center justify-between text-xs text-theme-text-muted">
         <span>{timeAgo}</span>
         <div className="flex items-center gap-3">
           <span>{cast.reactions.likes} likes</span>

@@ -1,38 +1,112 @@
 /**
  * DESIGN SYSTEM - DO NOT EDIT UNLESS NECESSARY
- * 
+ *
  * This file contains the centralized design system for the mini app.
  * These component classes establish the visual consistency across all components.
- * 
- * ⚠️  AI SHOULD NOT NORMALLY EDIT THIS FILE ⚠️
- * 
- * Instead of modifying these classes, AI should:
- * 1. Use existing component classes (e.g., .btn, .card, .input)
- * 2. Use Tailwind utilities for one-off styling
- * 3. Create new React components rather than new CSS classes
- * 4. Only edit this file for specific bug fixes or accessibility improvements
- * 
- * When AI needs to style something:
- * ✅ Good: <button className="btn btn-primary">Click me</button>
- * ✅ Good: <div className="bg-primary text-white px-4 py-2 rounded">Custom</div>
- * ❌ Bad: Adding new CSS classes here for component-specific styling
- * 
- * This design system is intentionally minimal to prevent bloat and maintain consistency.
+ *
+ * THEMING SYSTEM
+ * - Theme colors are defined as CSS variables
+ * - Three themes available: amber, purple (default), rain
+ * - Theme is applied via class on <html> element (e.g., .theme-purple)
+ * - Components use theme-* Tailwind classes that reference these variables
  */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================================
+   THEME VARIABLES
+   Purple is the default theme (applied to :root)
+   ============================================================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Legacy variables */
+  --background: #0c0a15;
+  --foreground: #f5f3ff;
+  --radius: 0.5rem;
+
+  /* Purple Theme (Default) - Modern crypto native */
+  --color-bg: #0c0a15;
+  --color-surface: #1a1625;
+  --color-border: #2d2640;
+  --color-primary: #a78bfa;
+  --color-primary-muted: #7c3aed;
+  --color-text: #f5f3ff;
+  --color-text-muted: #a1a1aa;
+  --color-positive: #a78bfa;
+  --color-negative: #fb923c;
+  --color-accent: #c4b5fd;
+  --color-embed-bg: #110e1c;
+  --gradient-start: #a78bfa;
+  --gradient-end: #7c3aed;
 }
+
+/* Amber Terminal Theme - Bloomberg serious money */
+.theme-amber {
+  --background: #0d0b07;
+  --foreground: #fafaf9;
+  --color-bg: #0d0b07;
+  --color-surface: #1a1610;
+  --color-border: #2d2820;
+  --color-primary: #f59e0b;
+  --color-primary-muted: #b45309;
+  --color-text: #fafaf9;
+  --color-text-muted: #a8a29e;
+  --color-positive: #fbbf24;
+  --color-negative: #94a3b8;
+  --color-accent: #fcd34d;
+  --color-embed-bg: #13100a;
+  --gradient-start: #f59e0b;
+  --gradient-end: #d97706;
+}
+
+/* Purple Theme (explicit class) - Modern crypto native */
+.theme-purple {
+  --background: #0c0a15;
+  --foreground: #f5f3ff;
+  --color-bg: #0c0a15;
+  --color-surface: #1a1625;
+  --color-border: #2d2640;
+  --color-primary: #a78bfa;
+  --color-primary-muted: #7c3aed;
+  --color-text: #f5f3ff;
+  --color-text-muted: #a1a1aa;
+  --color-positive: #a78bfa;
+  --color-negative: #fb923c;
+  --color-accent: #c4b5fd;
+  --color-embed-bg: #110e1c;
+  --gradient-start: #a78bfa;
+  --gradient-end: #7c3aed;
+}
+
+/* Rain Pink Theme - rain.xyz inspired, bold & vibrant */
+.theme-rain {
+  --background: #0d0710;
+  --foreground: #fdf2f8;
+  --color-bg: #0d0710;
+  --color-surface: #1a0f1e;
+  --color-border: #2d1f35;
+  --color-primary: #E42D9A;
+  --color-primary-muted: #be1b7e;
+  --color-text: #fdf2f8;
+  --color-text-muted: #a78baf;
+  --color-positive: #f472b6;
+  --color-negative: #64748b;
+  --color-accent: #fb7dc0;
+  --color-embed-bg: #120a15;
+  --gradient-start: #E42D9A;
+  --gradient-end: #9333ea;
+}
+
+/* ============================================================================
+   BASE STYLES
+   ============================================================================ */
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: 'Inter', Helvetica, Arial, sans-serif;
+  font-family: 'IBM Plex Mono', 'SF Mono', 'Fira Code', 'Consolas', monospace;
 }
 
 * {
@@ -44,68 +118,88 @@ body {
   display: none;
 }
 
-@layer base {
-  :root {
-    --radius: 0.5rem;
-  }
-}
+/* ============================================================================
+   COMPONENT CLASSES
+   ============================================================================ */
 
 @layer components {
   /* Global container styles for consistent layout */
   .container {
     @apply mx-auto max-w-md px-4;
   }
-  
+
   .container-wide {
     @apply mx-auto max-w-lg px-4;
   }
-  
+
   .container-narrow {
     @apply mx-auto max-w-sm px-4;
   }
 
-  /* Global card styles */
+  /* Global card styles - theme-aware */
   .card {
-    @apply bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm;
-  }
-  
-  .card-primary {
-    @apply bg-primary/10 border-primary/20;
+    @apply bg-theme-surface rounded-lg border border-theme-border shadow-sm;
   }
 
-  /* Global button styles */
+  .card-primary {
+    @apply bg-theme-primary/10 border-theme-primary/20;
+  }
+
+  /* Global button styles - theme-aware */
   .btn {
     @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
   }
-  
+
   .btn-primary {
-    @apply bg-primary text-white hover:bg-primary-dark focus:ring-primary;
+    @apply bg-gradient-primary text-white hover:opacity-90 focus:ring-theme-primary;
   }
-  
+
   .btn-secondary {
-    @apply bg-secondary text-gray-900 hover:bg-gray-200 focus:ring-gray-500 dark:bg-secondary-dark dark:text-gray-100 dark:hover:bg-gray-600;
+    @apply bg-theme-surface text-theme-text hover:bg-theme-border focus:ring-theme-border border border-theme-border;
   }
-  
+
   .btn-outline {
-    @apply border border-gray-300 bg-transparent hover:bg-gray-50 focus:ring-gray-500 dark:border-gray-600 dark:hover:bg-gray-800;
+    @apply border border-theme-border bg-transparent text-theme-text hover:bg-theme-surface focus:ring-theme-border;
   }
 
-  /* Global input styles */
+  /* Global input styles - theme-aware */
   .input {
-    @apply block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400;
+    @apply block w-full rounded-lg border border-theme-border bg-theme-surface px-3 py-2 text-theme-text placeholder-theme-text-muted focus:border-theme-primary focus:outline-none focus:ring-1 focus:ring-theme-primary;
   }
 
-  /* Global loading spinner */
+  /* Global loading spinner - theme-aware */
   .spinner {
-    @apply animate-spin rounded-full border-2 border-gray-300 border-t-primary;
+    @apply animate-spin rounded-full border-2 border-theme-border border-t-theme-primary;
   }
-  
+
   .spinner-primary {
     @apply animate-spin rounded-full border-2 border-white border-t-transparent;
   }
 
-  /* Global focus styles */
+  /* Global focus styles - theme-aware */
   .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+    @apply focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-2;
+  }
+
+  /* Gradient background utility */
+  .gradient-primary {
+    background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+  }
+
+  /* Badge pulse animation for urgency */
+  .badge-pulse {
+    animation: badge-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes badge-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  /* Respect reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    .badge-pulse {
+      animation: none;
+    }
   }
 }
