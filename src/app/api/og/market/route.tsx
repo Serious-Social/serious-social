@@ -114,23 +114,34 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching market data:', e);
   }
 
-  // Fetch cast content
+  // Fetch cast content from Redis cache (avoids Neynar rate limits)
   let castText = 'Claim not available';
 
   try {
     const mapping = await getCastMapping(postId);
     if (mapping) {
-      const client = getNeynarClient();
-      const response = await client.lookupCastByHashOrWarpcastUrl({
-        identifier: mapping.castHash,
-        type: 'hash',
-      });
-      if (response.cast) {
-        castText = response.cast.text;
+      // Use cached text from Redis if available
+      if (mapping.text) {
+        castText = mapping.text;
+      } else {
+        // Fallback to Neynar API only if no cached text
+        try {
+          const client = getNeynarClient();
+          const response = await client.lookupCastByHashOrWarpcastUrl({
+            identifier: mapping.castHash,
+            type: 'hash',
+          });
+          if (response.cast) {
+            castText = response.cast.text;
+          }
+        } catch (apiError) {
+          // Neynar rate limited or unavailable - use fallback
+          console.warn('Neynar API unavailable, using fallback text');
+        }
       }
     }
   } catch (e) {
-    console.error('Error fetching cast:', e);
+    console.error('Error fetching cast mapping:', e);
   }
 
   // Truncate text if too long
