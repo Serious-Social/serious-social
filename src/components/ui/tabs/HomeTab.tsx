@@ -71,8 +71,9 @@ export function HomeTab({ fid }: { fid?: number }) {
       {forYouLoading && fid && (
         <div className="space-y-3">
           <h3 className="text-sm font-medium text-theme-text-muted">For You</h3>
-          <div className="text-center py-4">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-theme-primary mx-auto" />
+          <div className="space-y-3">
+            <SkeletonCard />
+            <SkeletonCard />
           </div>
         </div>
       )}
@@ -93,9 +94,10 @@ export function HomeTab({ fid }: { fid?: number }) {
         <h3 className="text-sm font-medium text-theme-text-muted">Recent Markets</h3>
 
         {isLoading && (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-theme-primary mx-auto mb-2" />
-            <p className="text-sm text-theme-text-muted">Loading markets...</p>
+          <div className="space-y-3">
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
           </div>
         )}
 
@@ -164,7 +166,7 @@ function MarketCard({ market }: { market: MarketData }) {
   return (
     <Link
       href={`/market/${market.postId}`}
-      className="block bg-theme-surface border border-theme-border rounded-xl p-4 hover:border-theme-primary/50 transition-colors"
+      className="block bg-theme-surface border border-theme-border rounded-xl p-4 hover:border-theme-primary/50 hover:bg-theme-surface/80 active:scale-[0.99] transition-all duration-150"
     >
       {/* Author */}
       {market.cast && (
@@ -233,6 +235,32 @@ function MarketCard({ market }: { market: MarketData }) {
         </div>
       )}
     </Link>
+  );
+}
+
+/** Skeleton loading card that preserves layout during loading */
+function SkeletonCard() {
+  return (
+    <div className="bg-theme-surface border border-theme-border rounded-xl p-4 animate-pulse">
+      {/* Author skeleton */}
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-6 h-6 rounded-full bg-theme-border" />
+        <div className="h-4 w-24 bg-theme-border rounded" />
+        <div className="h-3 w-8 bg-theme-border rounded" />
+      </div>
+      {/* Text skeleton */}
+      <div className="space-y-2 mb-3">
+        <div className="h-4 bg-theme-border rounded w-full" />
+        <div className="h-4 bg-theme-border rounded w-5/6" />
+        <div className="h-4 bg-theme-border rounded w-3/4" />
+      </div>
+      {/* Bar skeleton */}
+      <div className="flex gap-0.5 w-full">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <div key={i} className="h-2 flex-1 bg-theme-border" />
+        ))}
+      </div>
+    </div>
   );
 }
 
