@@ -13,6 +13,21 @@ import {
 
 export const dynamic = 'force-dynamic';
 
+// Purple theme colors (default)
+const THEME = {
+  bg: '#0c0a15',
+  embedBg: '#110e1c',
+  surface: '#1a1625',
+  border: '#2d2640',
+  primary: '#a78bfa',
+  primaryMuted: '#7c3aed',
+  text: '#f5f3ff',
+  textMuted: '#a1a1aa',
+  positive: '#a78bfa',
+  negative: '#fb923c',
+  accent: '#c4b5fd',
+};
+
 const publicClient = createPublicClient({
   chain: baseSepolia,
   transport: http(),
@@ -25,8 +40,16 @@ export async function GET(request: NextRequest) {
   if (!postId) {
     return new ImageResponse(
       (
-        <div style={{ display: 'flex', width: '100%', height: '100%', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f172a' }}>
-          <h1 style={{ fontSize: 60, color: '#fff' }}>Invalid Market</h1>
+        <div style={{
+          display: 'flex',
+          width: '100%',
+          height: '100%',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: THEME.bg,
+        }}>
+          <h1 style={{ fontSize: 60, color: THEME.text }}>Invalid Market</h1>
         </div>
       ),
       { width: 1200, height: 630 }
@@ -34,10 +57,10 @@ export async function GET(request: NextRequest) {
   }
 
   // Fetch market data
-  let marketAddress: string | null = null;
   let supportPool = 0n;
   let opposePool = 0n;
   let marketExists = false;
+  let participantCount = 0;
   let state: {
     belief: bigint;
     supportWeight: bigint;
@@ -56,7 +79,6 @@ export async function GET(request: NextRequest) {
     }) as `0x${string}`;
 
     if (address && address !== '0x0000000000000000000000000000000000000000') {
-      marketAddress = address;
       marketExists = true;
 
       // Fetch market state
@@ -75,6 +97,18 @@ export async function GET(request: NextRequest) {
 
       supportPool = state.supportPrincipal;
       opposePool = state.opposePrincipal;
+
+      // Get participant count from API
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://serious.social';
+        const participantsRes = await fetch(`${baseUrl}/api/market-participants?postId=${postId}`);
+        if (participantsRes.ok) {
+          const participantsData = await participantsRes.json();
+          participantCount = (participantsData.support?.length || 0) + (participantsData.challenge?.length || 0);
+        }
+      } catch {
+        // Ignore participant fetch errors
+      }
     }
   } catch (e) {
     console.error('Error fetching market data:', e);
@@ -82,8 +116,6 @@ export async function GET(request: NextRequest) {
 
   // Fetch cast content
   let castText = 'Claim not available';
-  let authorName = '';
-  let authorPfp = '';
 
   try {
     const mapping = await getCastMapping(postId);
@@ -95,8 +127,6 @@ export async function GET(request: NextRequest) {
       });
       if (response.cast) {
         castText = response.cast.text;
-        authorName = response.cast.author.display_name || response.cast.author.username;
-        authorPfp = response.cast.author.pfp_url || '';
       }
     }
   } catch (e) {
@@ -104,119 +134,245 @@ export async function GET(request: NextRequest) {
   }
 
   // Truncate text if too long
-  const maxLength = 200;
+  const maxLength = 140;
   const displayText = castText.length > maxLength
     ? castText.slice(0, maxLength) + '...'
     : castText;
 
   // Calculate percentages
   const total = supportPool + opposePool;
-  const capitalSupportPercent = total > 0n ? Number((supportPool * 100n) / total) : 50;
+  const supportPercent = total > 0n ? Number((supportPool * 100n) / total) : 100;
+  const isUnchallenged = opposePool === 0n && supportPool > 0n;
 
-  // Time commitment: average seconds per dollar = weight / principal
-  const supportTime = state?.supportPrincipal && state.supportPrincipal > 0n
-    ? Number(state.supportWeight / state.supportPrincipal)
-    : 0;
-  const opposeTime = state?.opposePrincipal && state.opposePrincipal > 0n
-    ? Number(state.opposeWeight / state.opposePrincipal)
-    : 0;
-  const totalTime = supportTime + opposeTime;
-  const timeSupportPercent = totalTime > 0 ? Math.round((supportTime / totalTime) * 100) : 50;
-
-  // Main belief signal
-  const beliefPercent = state?.belief ? Number(state.belief * 100n / BigInt(1e18)) : 50;
-  const beliefOpposePercent = 100 - beliefPercent;
+  // Format USDC (6 decimals)
+  const totalStaked = Number(total) / 1_000_000;
+  const stakedDisplay = totalStaked >= 1000
+    ? `$${(totalStaked / 1000).toFixed(1)}k`
+    : `$${totalStaked.toFixed(0)}`;
 
   return new ImageResponse(
     (
-      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', backgroundColor: '#f8fafc' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 64px', backgroundColor: '#fff', borderBottom: '1px solid #e2e8f0' }}>
-          <div style={{ fontSize: 30, fontWeight: 700, color: '#1e293b' }}>Serious Social</div>
-          <div style={{ fontSize: 20, color: '#64748b' }}>Belief Market</div>
-        </div>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        height: '100%',
+        backgroundColor: THEME.embedBg,
+        padding: '48px',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        position: 'relative',
+      }}>
+        {/* Grid texture overlay */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundImage: `
+            linear-gradient(${THEME.border}40 1px, transparent 1px),
+            linear-gradient(90deg, ${THEME.border}40 1px, transparent 1px)
+          `,
+          backgroundSize: '40px 40px',
+          opacity: 0.3,
+        }} />
 
-        {/* Content */}
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '40px 64px' }}>
-          {/* Author */}
-          {authorName && (
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
-              <span style={{ fontSize: 24, color: '#475569' }}>@{authorName}</span>
-            </div>
-          )}
-
-          {/* Claim text */}
-          <div style={{ display: 'flex', flex: 1, alignItems: 'center' }}>
-            <p style={{ fontSize: 40, color: '#0f172a', lineHeight: 1.4 }}>{displayText}</p>
+        {/* Content container */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          position: 'relative',
+          zIndex: 1,
+        }}>
+          {/* Header row */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '32px',
+          }}>
+            <span style={{
+              color: THEME.primary,
+              fontSize: '28px',
+              fontWeight: 700,
+              letterSpacing: '3px',
+            }}>
+              SERIOUS.SOCIAL
+            </span>
+            {marketExists && (
+              isUnchallenged ? (
+                <span style={{
+                  color: THEME.accent,
+                  fontSize: '20px',
+                  padding: '8px 20px',
+                  border: `2px solid ${THEME.accent}`,
+                  letterSpacing: '1px',
+                  fontWeight: 500,
+                }}>
+                  UNCHALLENGED
+                </span>
+              ) : (
+                <span style={{
+                  color: THEME.textMuted,
+                  fontSize: '20px',
+                  padding: '8px 20px',
+                  border: `2px solid ${THEME.border}`,
+                  letterSpacing: '1px',
+                }}>
+                  {supportPercent}% SUPPORT
+                </span>
+              )
+            )}
           </div>
 
-          {/* Belief signal bars */}
+          {/* Claim text */}
+          <div style={{
+            display: 'flex',
+            flex: 1,
+            alignItems: 'center',
+          }}>
+            <p style={{
+              color: THEME.text,
+              fontSize: '36px',
+              lineHeight: 1.4,
+              opacity: 0.9,
+              margin: 0,
+            }}>
+              &ldquo;{displayText}&rdquo;
+            </p>
+          </div>
+
+          {/* Bottom stats row */}
           {marketExists && (
-            <div style={{ display: 'flex', flexDirection: 'column', marginTop: 40 }}>
-              {/* Unchallenged badge */}
-              {opposePool === 0n && supportPool > 0n && (
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-                  <span style={{ fontSize: 36, color: '#b45309', backgroundColor: '#fef3c7', padding: '12px 32px', borderRadius: 9999, fontWeight: 500 }}>
-                    Unchallenged
+            <div style={{
+              display: 'flex',
+              gap: '60px',
+              alignItems: 'flex-end',
+              paddingTop: '32px',
+              borderTop: `2px solid ${THEME.border}`,
+              marginTop: '32px',
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{
+                  color: THEME.primary,
+                  fontSize: '48px',
+                  fontWeight: 700,
+                  lineHeight: 1,
+                }}>
+                  {stakedDisplay}
+                </span>
+                <span style={{
+                  color: THEME.textMuted,
+                  fontSize: '16px',
+                  letterSpacing: '1px',
+                  marginTop: '8px',
+                }}>
+                  STAKED
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{
+                  color: THEME.text,
+                  fontSize: '48px',
+                  fontWeight: 700,
+                  lineHeight: 1,
+                }}>
+                  {participantCount || '—'}
+                </span>
+                <span style={{
+                  color: THEME.textMuted,
+                  fontSize: '16px',
+                  letterSpacing: '1px',
+                  marginTop: '8px',
+                }}>
+                  BELIEVERS
+                </span>
+              </div>
+              {!isUnchallenged && (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  marginLeft: 'auto',
+                }}>
+                  {/* Mini belief bar */}
+                  <div style={{
+                    display: 'flex',
+                    width: '200px',
+                    height: '12px',
+                    borderRadius: '6px',
+                    overflow: 'hidden',
+                  }}>
+                    <div style={{
+                      width: `${supportPercent}%`,
+                      backgroundColor: THEME.positive,
+                      height: '100%',
+                    }} />
+                    <div style={{
+                      flex: 1,
+                      backgroundColor: THEME.negative,
+                      opacity: 0.4,
+                      height: '100%',
+                    }} />
+                  </div>
+                  <span style={{
+                    color: THEME.textMuted,
+                    fontSize: '16px',
+                    letterSpacing: '1px',
+                    marginTop: '8px',
+                    textAlign: 'right',
+                  }}>
+                    {supportPercent}% / {100 - supportPercent}%
                   </span>
                 </div>
               )}
-
-              {/* Capital bar */}
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ fontSize: 20, color: '#64748b', width: 40 }}>$</span>
-                <div style={{ display: 'flex', flex: 1, height: 12, backgroundColor: '#cbd5e1', borderRadius: 9999, overflow: 'hidden' }}>
-                  <div style={{ display: 'flex', height: '100%', width: `${capitalSupportPercent}%`, backgroundColor: '#334155', borderRadius: 9999 }} />
+              {isUnchallenged && (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  marginLeft: 'auto',
+                  alignItems: 'flex-end',
+                }}>
+                  <span style={{
+                    color: THEME.text,
+                    fontSize: '48px',
+                    fontWeight: 700,
+                    lineHeight: 1,
+                  }}>
+                    100%
+                  </span>
+                  <span style={{
+                    color: THEME.textMuted,
+                    fontSize: '16px',
+                    letterSpacing: '1px',
+                    marginTop: '8px',
+                  }}>
+                    SUPPORT
+                  </span>
                 </div>
-              </div>
-
-              {/* Time bar */}
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
-                <span style={{ fontSize: 20, color: '#64748b', width: 40 }}>{"\u23F1"}</span>
-                <div style={{ display: 'flex', flex: 1, height: 12, backgroundColor: '#cbd5e1', borderRadius: 9999, overflow: 'hidden' }}>
-                  <div style={{ display: 'flex', height: '100%', width: `${timeSupportPercent}%`, backgroundColor: '#334155', borderRadius: 9999 }} />
-                </div>
-              </div>
-
-              {/* Main belief bar */}
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <div style={{ width: 40 }} />
-                <div style={{ display: 'flex', flex: 1, height: 32, backgroundColor: '#cbd5e1', borderRadius: 9999, overflow: 'hidden' }}>
-                  <div style={{ display: 'flex', height: '100%', width: `${Math.max(beliefPercent, 5)}%`, backgroundColor: '#334155', borderRadius: 9999, alignItems: 'center', justifyContent: 'center' }}>
-                    {beliefPercent > 10 && (
-                      <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{beliefPercent}%</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Support / Challenge labels */}
-              <div style={{ display: 'flex', marginTop: 8 }}>
-                <div style={{ width: 40 }} />
-                <div style={{ display: 'flex', flex: 1, justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 20, fontWeight: 500, color: '#334155' }}>Support</span>
-                  <span style={{ fontSize: 20, fontWeight: 500, color: '#334155' }}>Challenge</span>
-                </div>
-              </div>
+              )}
             </div>
           )}
 
           {!marketExists && (
-            <div style={{ display: 'flex', marginTop: 40, padding: '16px 24px', backgroundColor: '#fef3c7', borderRadius: 12 }}>
-              <span style={{ fontSize: 20, color: '#92400e' }}>Market not yet created</span>
+            <div style={{
+              display: 'flex',
+              marginTop: 'auto',
+              padding: '20px 32px',
+              backgroundColor: `${THEME.surface}`,
+              border: `2px solid ${THEME.border}`,
+            }}>
+              <span style={{ fontSize: '24px', color: THEME.textMuted }}>
+                Market pending confirmation
+              </span>
             </div>
           )}
-        </div>
-
-        {/* Footer */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 64px', backgroundColor: '#f1f5f9', borderTop: '1px solid #e2e8f0' }}>
-          <span style={{ fontSize: 24, color: '#64748b', fontWeight: 500 }}>Put your money where your mouth is</span>
         </div>
       </div>
     ),
     {
       width: 1200,
-      height: 800,
+      height: 630,
     }
   );
 }
