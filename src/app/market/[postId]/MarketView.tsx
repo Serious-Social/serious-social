@@ -244,10 +244,15 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           />
         </section>
 
-        {/* User's positions */}
+        {/* User's positions - prominent after staking (per UX spec) */}
         {isConnected && positions.length > 0 && (
-          <section className="bg-theme-surface border border-theme-border rounded-xl p-4">
-            <h2 className="text-sm font-medium text-theme-text-muted mb-3">Your Positions</h2>
+          <section className="bg-gradient-to-br from-theme-primary/10 to-theme-surface border-2 border-theme-primary/30 rounded-xl p-4">
+            <h2 className="text-sm font-semibold text-theme-primary mb-3 flex items-center gap-2">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              Your Positions
+            </h2>
             <div className="space-y-3">
               {positions.map((pos) => (
                 <PositionCard
@@ -265,25 +270,11 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           </section>
         )}
 
-        {/* Action CTAs */}
-        <section className="space-y-3">
-          <div className="flex gap-3">
-            <button
-              onClick={() => handleOpenModal(Side.Support)}
-              className="flex-1 py-4 rounded-xl font-medium transition-colors bg-theme-surface border border-theme-border text-theme-text hover:bg-theme-border"
-            >
-              Support
-            </button>
-            <button
-              onClick={() => handleOpenModal(Side.Oppose)}
-              className="flex-1 py-4 rounded-xl font-medium transition-colors bg-gradient-primary text-white hover:opacity-90"
-            >
-              Challenge
-            </button>
-          </div>
+        {/* Share button (secondary action) */}
+        <section>
           <ShareButton
             buttonText="Share this market"
-            className="w-full py-4 rounded-xl font-medium transition-colors bg-theme-surface border border-theme-border text-theme-text-muted hover:text-theme-text hover:bg-theme-border"
+            className="w-full py-3 rounded-xl font-medium transition-colors bg-theme-surface border border-theme-border text-theme-text-muted hover:text-theme-text hover:bg-theme-border"
             cast={{
               text: castContent
                 ? `"${castContent.text.slice(0, 100)}${castContent.text.length > 100 ? '...' : ''}"\n\nDo you believe this? Put your money where your mouth is.`
@@ -292,6 +283,9 @@ export function MarketView({ postId, intent }: MarketViewProps) {
             }}
           />
         </section>
+
+        {/* Spacer for sticky bottom bar */}
+        <div className="h-20" />
 
         {/* Rules/Info (collapsible) */}
         <details id="how-it-works" ref={howItWorksRef} className="bg-theme-surface border border-theme-border rounded-xl">
@@ -327,6 +321,24 @@ export function MarketView({ postId, intent }: MarketViewProps) {
         <div className="text-center text-xs text-theme-text-muted/70 space-y-1 pt-4 border-t border-theme-border">
           <p>Market: {marketAddress?.slice(0, 10)}...{marketAddress?.slice(-8)}</p>
           <p>Post ID: {postId.slice(0, 10)}...{postId.slice(-8)}</p>
+        </div>
+      </div>
+
+      {/* Sticky bottom action bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-theme-bg/95 backdrop-blur-sm border-t border-theme-border p-4 z-40">
+        <div className="max-w-lg mx-auto flex gap-3">
+          <button
+            onClick={() => handleOpenModal(Side.Support)}
+            className="flex-1 py-4 rounded-xl font-medium transition-all bg-theme-surface border border-theme-border text-theme-text hover:bg-theme-border active:scale-[0.98]"
+          >
+            Support
+          </button>
+          <button
+            onClick={() => handleOpenModal(Side.Oppose)}
+            className="flex-1 py-4 rounded-xl font-medium transition-all bg-gradient-primary text-white hover:opacity-90 active:scale-[0.98]"
+          >
+            Challenge
+          </button>
         </div>
       </div>
 
