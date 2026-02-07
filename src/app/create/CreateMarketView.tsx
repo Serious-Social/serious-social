@@ -7,18 +7,18 @@ import { useAccount, useConnect, useSwitchChain } from 'wagmi';
 import { useMiniApp } from '@neynar/react';
 import { useVaultAllowance, useUSDCBalance } from '~/hooks/useBeliefMarketWrite';
 import { useFarcasterApproveUSDC, useFarcasterCreateMarket } from '~/hooks/useFarcasterTransaction';
-import { useMarketAddress, useMarketExists } from '~/hooks/useBeliefMarket';
+import { useMarketAddress, useMarketExists, useDefaultParams } from '~/hooks/useBeliefMarket';
 import { generatePostId } from '~/lib/postId';
 import { maxUint256 } from 'viem';
 import {
   formatUSDC,
   parseUSDC,
+  formatBps,
+  formatLockPeriod,
   DEFAULT_CHAIN_ID,
   CONTRACTS,
   MIN_STAKE,
   MAX_STAKE,
-  MIN_STAKE_DISPLAY,
-  MAX_STAKE_DISPLAY,
 } from '~/lib/contracts';
 import { ShareButton } from '~/components/ui/Share';
 
@@ -47,6 +47,13 @@ export function CreateMarketView() {
   const { connectors, connect } = useConnect();
   const { switchChain } = useSwitchChain();
   const { context } = useMiniApp();
+  const { data: defaultParams } = useDefaultParams();
+
+  // Derive stake limits from contract params (fallback to hardcoded constants)
+  const minStake = defaultParams?.minStake ?? MIN_STAKE;
+  const maxStake = defaultParams?.maxStake ?? MAX_STAKE;
+  const minStakeDisplay = Number(minStake) / 1e6;
+  const maxStakeDisplay = Number(maxStake) / 1e6;
 
   // State
   const [casts, setCasts] = useState<Cast[]>([]);
@@ -61,7 +68,7 @@ export function CreateMarketView() {
 
   const amountBigInt = parseUSDC(amount);
   const amountNum = parseFloat(amount) || 0;
-  const isValidAmount = amountBigInt >= MIN_STAKE && amountBigInt <= MAX_STAKE;
+  const isValidAmount = amountBigInt >= minStake && amountBigInt <= maxStake;
 
   // Generate postId from selected cast hash
   const postId = selectedCast ? generatePostId(selectedCast.hash) : null;
@@ -404,15 +411,15 @@ export function CreateMarketView() {
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         placeholder="10.00"
-                        min={MIN_STAKE_DISPLAY}
-                        max={MAX_STAKE_DISPLAY}
+                        min={minStakeDisplay}
+                        max={maxStakeDisplay}
                         step="0.01"
                         className="w-full pl-8 pr-4 py-3 border border-theme-border bg-theme-bg rounded-xl focus:ring-2 focus:ring-theme-primary focus:border-transparent outline-none text-theme-text placeholder-theme-text-muted"
                       />
                     </div>
                     <div className="flex justify-between mt-1">
                       <p className="text-xs text-theme-text-muted">
-                        Min ${MIN_STAKE_DISPLAY}, Max ${MAX_STAKE_DISPLAY}
+                        Min ${minStakeDisplay}, Max ${maxStakeDisplay}
                       </p>
                       {balance !== undefined && (
                         <p className="text-xs text-theme-text-muted">
@@ -423,11 +430,11 @@ export function CreateMarketView() {
                   </div>
 
                   {/* Validation errors */}
-                  {amountNum > 0 && amountNum < MIN_STAKE_DISPLAY && (
-                    <p className="text-sm text-red-500">Minimum commitment is ${MIN_STAKE_DISPLAY}</p>
+                  {amountNum > 0 && amountNum < minStakeDisplay && (
+                    <p className="text-sm text-red-500">Minimum commitment is ${minStakeDisplay}</p>
                   )}
-                  {amountNum > MAX_STAKE_DISPLAY && (
-                    <p className="text-sm text-red-500">Maximum commitment is ${MAX_STAKE_DISPLAY}</p>
+                  {amountNum > maxStakeDisplay && (
+                    <p className="text-sm text-red-500">Maximum commitment is ${maxStakeDisplay}</p>
                   )}
                   {isValidAmount && !hasBalance(amountBigInt) && (
                     <p className="text-sm text-red-500">Insufficient USDC balance</p>
@@ -438,8 +445,8 @@ export function CreateMarketView() {
                 <div className="bg-theme-bg border border-theme-border rounded-lg p-4 text-sm text-theme-text-muted space-y-2">
                   <p><strong className="text-theme-text">By creating this market:</strong></p>
                   <ul className="list-disc list-inside space-y-1">
-                    <li>Your USDC is committed for 30 days (5% early withdrawal penalty)</li>
-                    <li>A 2% author premium funds the reward pool</li>
+                    <li>Your USDC is committed for {defaultParams ? formatLockPeriod(defaultParams.lockPeriod) : '30 days'} ({defaultParams ? formatBps(defaultParams.earlyWithdrawPenaltyBps) : '5%'} early withdrawal penalty)</li>
+                    <li>A {defaultParams ? formatBps(defaultParams.authorPremiumBps) : '2%'} author premium funds the reward pool</li>
                     <li>Others can support or challenge your claim</li>
                   </ul>
                 </div>

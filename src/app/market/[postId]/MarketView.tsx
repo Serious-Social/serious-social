@@ -6,7 +6,7 @@ import { useFarcasterWithdraw, useFarcasterClaimRewards } from '~/hooks/useFarca
 import { BeliefCurve, StatusBadge, type ProfileInfo } from '~/components/ui/BeliefCurve';
 import { CommitModal } from '~/components/ui/CommitModal';
 import { ShareButton } from '~/components/ui/Share';
-import { formatUSDC, Side, Position, getMarketStatus } from '~/lib/contracts';
+import { formatUSDC, formatBps, formatLockPeriod, Side, Position, getMarketStatus } from '~/lib/contracts';
 import { useAccount } from 'wagmi';
 import { useState, useEffect, useRef } from 'react';
 
@@ -234,6 +234,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
             state={state ?? null}
             beliefChange24h={beliefChange24h}
             participants={participants ?? undefined}
+            earlyWithdrawPenaltyPercent={marketParams ? formatBps(marketParams.earlyWithdrawPenaltyBps) : undefined}
             onInfoClick={() => {
               const el = howItWorksRef.current;
               if (el) {
@@ -259,7 +260,8 @@ export function MarketView({ postId, intent }: MarketViewProps) {
                   key={pos.id.toString()}
                   position={pos}
                   marketAddress={marketAddress as `0x${string}`}
-                  minRewardDuration={marketParams ? Number(marketParams.minRewardDuration) : undefined}
+                  minRewardDuration={marketParams ? marketParams.minRewardDuration : undefined}
+                  earlyWithdrawPenaltyBps={marketParams?.earlyWithdrawPenaltyBps}
                   onAction={() => {
                     refetch();
                     refetchPositions();
@@ -295,7 +297,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           <div className="px-4 pb-4 text-sm text-theme-text-muted space-y-2">
             <p>
               <strong className="text-theme-text">Supporting</strong> a claim means staking USDC to signal that you believe it.
-              Your capital is committed for 30 days.
+              Your capital is committed for {marketParams ? formatLockPeriod(marketParams.lockPeriod) : '30 days'}.
             </p>
             <p>
               <strong className="text-theme-text">Challenging</strong> means staking against the claim. This creates measured
@@ -303,7 +305,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
             </p>
             <p>
               <strong className="text-theme-text">Early withdrawal.</strong> You can withdraw before the lock period ends,
-              but a 5% penalty is deducted and added to the reward pool. Early exits also
+              but a {marketParams ? formatBps(marketParams.earlyWithdrawPenaltyBps) : '5%'} penalty is deducted and added to the reward pool. Early exits also
               forfeit any pending rewards.
             </p>
             <p>
@@ -351,6 +353,8 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           marketAddress={marketAddress as `0x${string}`}
           postId={postId}
           castText={castContent?.text}
+          lockPeriod={marketParams?.lockPeriod}
+          earlyWithdrawPenaltyBps={marketParams?.earlyWithdrawPenaltyBps}
           onSuccess={handleCommitSuccess}
         />
       )}
@@ -362,6 +366,7 @@ interface PositionCardProps {
   position: Position & { id: bigint };
   marketAddress: `0x${string}`;
   minRewardDuration?: number;
+  earlyWithdrawPenaltyBps?: number;
   onAction: () => void;
 }
 
@@ -374,7 +379,7 @@ function formatCountdown(seconds: number): string {
   return `${minutes}m`;
 }
 
-function PositionCard({ position, marketAddress, minRewardDuration, onAction }: PositionCardProps) {
+function PositionCard({ position, marketAddress, minRewardDuration, earlyWithdrawPenaltyBps, onAction }: PositionCardProps) {
   const isLocked = Date.now() / 1000 < position.unlockTimestamp;
   const unlockDate = new Date(position.unlockTimestamp * 1000);
   const canWithdraw = !position.withdrawn;
@@ -483,7 +488,7 @@ function PositionCard({ position, marketAddress, minRewardDuration, onAction }: 
       {showPenaltyConfirm && (
         <div className="bg-theme-negative/10 border border-theme-negative/30 rounded-lg p-3 space-y-2">
           <p className="text-xs text-theme-text">
-            Withdrawing early incurs a <strong>5% penalty</strong> on your principal and forfeits pending rewards.
+            Withdrawing early incurs a <strong>{earlyWithdrawPenaltyBps != null ? formatBps(earlyWithdrawPenaltyBps) : '5%'} penalty</strong> on your principal and forfeits pending rewards.
           </p>
           <div className="flex gap-2">
             <button

@@ -5,7 +5,7 @@ import { useAccount, useConnect, useSwitchChain } from 'wagmi';
 import { useMiniApp } from '@neynar/react';
 import { useCommitFlow } from '~/hooks/useBeliefMarketWrite';
 import { ShareButton } from '~/components/ui/Share';
-import { Side, formatUSDC, parseUSDC, DEFAULT_CHAIN_ID, CONTRACTS } from '~/lib/contracts';
+import { Side, formatUSDC, parseUSDC, formatBps, formatLockPeriod, DEFAULT_CHAIN_ID, CONTRACTS } from '~/lib/contracts';
 
 interface CommitModalProps {
   isOpen: boolean;
@@ -14,12 +14,14 @@ interface CommitModalProps {
   marketAddress: `0x${string}`;
   postId: string;
   castText?: string;
+  lockPeriod?: number;
+  earlyWithdrawPenaltyBps?: number;
   onSuccess?: () => void;
 }
 
 type Step = 'input' | 'approve' | 'commit' | 'success';
 
-export function CommitModal({ isOpen, onClose, side, marketAddress, postId, castText, onSuccess }: CommitModalProps) {
+export function CommitModal({ isOpen, onClose, side, marketAddress, postId, castText, lockPeriod, earlyWithdrawPenaltyBps, onSuccess }: CommitModalProps) {
   const { isConnected, chain, address } = useAccount();
   const { connectors, connect } = useConnect();
   const { switchChain } = useSwitchChain();
@@ -216,8 +218,8 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
               <div className="bg-theme-bg border border-theme-border rounded-lg p-4 text-sm text-theme-text-muted">
                 <p>
                   {side === Side.Support
-                    ? 'By supporting, you signal that you believe this claim. Your capital is committed for 30 days. Early withdrawal incurs a 5% penalty.'
-                    : 'By challenging, you signal measured disagreement. Your capital is committed for 30 days. Early withdrawal incurs a 5% penalty.'}
+                    ? `By supporting, you signal that you believe this claim. Your capital is committed for ${lockPeriod != null ? formatLockPeriod(lockPeriod) : '30 days'}. Early withdrawal incurs a ${earlyWithdrawPenaltyBps != null ? formatBps(earlyWithdrawPenaltyBps) : '5%'} penalty.`
+                    : `By challenging, you signal measured disagreement. Your capital is committed for ${lockPeriod != null ? formatLockPeriod(lockPeriod) : '30 days'}. Early withdrawal incurs a ${earlyWithdrawPenaltyBps != null ? formatBps(earlyWithdrawPenaltyBps) : '5%'} penalty.`}
                 </p>
               </div>
 

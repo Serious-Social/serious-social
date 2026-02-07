@@ -51,6 +51,30 @@ export const BELIEF_FACTORY_ABI = [
     stateMutability: 'nonpayable',
   },
   {
+    type: 'function',
+    name: 'getDefaultParams',
+    inputs: [],
+    outputs: [
+      {
+        name: 'params',
+        type: 'tuple',
+        components: [
+          { name: 'lockPeriod', type: 'uint32' },
+          { name: 'minRewardDuration', type: 'uint32' },
+          { name: 'lateEntryFeeBaseBps', type: 'uint16' },
+          { name: 'lateEntryFeeMaxBps', type: 'uint16' },
+          { name: 'lateEntryFeeScale', type: 'uint64' },
+          { name: 'authorPremiumBps', type: 'uint16' },
+          { name: 'earlyWithdrawPenaltyBps', type: 'uint16' },
+          { name: 'yieldBearingEscrow', type: 'bool' },
+          { name: 'minStake', type: 'uint64' },
+          { name: 'maxStake', type: 'uint64' },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
     type: 'event',
     name: 'MarketCreated',
     inputs: [
@@ -263,6 +287,19 @@ export enum Side {
   Oppose = 1,
 }
 
+export interface MarketParams {
+  lockPeriod: number;
+  minRewardDuration: number;
+  lateEntryFeeBaseBps: number;
+  lateEntryFeeMaxBps: number;
+  lateEntryFeeScale: bigint;
+  authorPremiumBps: number;
+  earlyWithdrawPenaltyBps: number;
+  yieldBearingEscrow: boolean;
+  minStake: bigint;
+  maxStake: bigint;
+}
+
 export interface MarketState {
   belief: bigint;
   supportWeight: bigint;
@@ -306,4 +343,19 @@ export function parseUSDC(amount: string): bigint {
   const num = parseFloat(amount);
   if (isNaN(num) || num < 0) return 0n;
   return BigInt(Math.floor(num * 1e6));
+}
+
+// Format basis points as percentage string, e.g. 500 → "5%", 250 → "2.5%"
+export function formatBps(bps: number): string {
+  const pct = bps / 100;
+  return pct % 1 === 0 ? `${pct}%` : `${pct}%`;
+}
+
+// Format lock period seconds as human-readable duration, e.g. 2592000 → "30 days"
+export function formatLockPeriod(seconds: number): string {
+  const days = seconds / 86400;
+  if (days >= 1 && days % 1 === 0) return `${days} day${days === 1 ? '' : 's'}`;
+  const hours = seconds / 3600;
+  if (hours >= 1 && hours % 1 === 0) return `${hours} hour${hours === 1 ? '' : 's'}`;
+  return `${seconds} seconds`;
 }

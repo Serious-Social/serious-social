@@ -7,6 +7,7 @@ import {
   BELIEF_FACTORY_ABI,
   BELIEF_MARKET_ABI,
   DEFAULT_CHAIN_ID,
+  MarketParams,
   MarketState,
   Position,
   Side,
@@ -44,6 +45,38 @@ export function useMarketExists(postId: `0x${string}` | undefined) {
       enabled: !!postId,
     },
   });
+}
+
+/**
+ * Get factory default params (for pages without a specific market).
+ */
+export function useDefaultParams() {
+  const result = useReadContract({
+    address: CONTRACTS[chainId].factory,
+    abi: BELIEF_FACTORY_ABI,
+    functionName: 'getDefaultParams',
+    chainId,
+  });
+
+  const params: MarketParams | undefined = result.data
+    ? {
+        lockPeriod: Number(result.data.lockPeriod),
+        minRewardDuration: Number(result.data.minRewardDuration),
+        lateEntryFeeBaseBps: Number(result.data.lateEntryFeeBaseBps),
+        lateEntryFeeMaxBps: Number(result.data.lateEntryFeeMaxBps),
+        lateEntryFeeScale: BigInt(result.data.lateEntryFeeScale),
+        authorPremiumBps: Number(result.data.authorPremiumBps),
+        earlyWithdrawPenaltyBps: Number(result.data.earlyWithdrawPenaltyBps),
+        yieldBearingEscrow: result.data.yieldBearingEscrow,
+        minStake: BigInt(result.data.minStake),
+        maxStake: BigInt(result.data.maxStake),
+      }
+    : undefined;
+
+  return {
+    ...result,
+    data: params,
+  };
 }
 
 /**
@@ -177,7 +210,7 @@ export function usePendingRewards(marketAddress: `0x${string}` | undefined, posi
  * Get market params (lockPeriod, minRewardDuration, etc.).
  */
 export function useMarketParams(marketAddress: `0x${string}` | undefined) {
-  return useReadContract({
+  const result = useReadContract({
     address: marketAddress,
     abi: BELIEF_MARKET_ABI,
     functionName: 'getMarketParams',
@@ -186,6 +219,26 @@ export function useMarketParams(marketAddress: `0x${string}` | undefined) {
       enabled: !!marketAddress && marketAddress !== '0x0000000000000000000000000000000000000000',
     },
   });
+
+  const params: MarketParams | undefined = result.data
+    ? {
+        lockPeriod: Number(result.data.lockPeriod),
+        minRewardDuration: Number(result.data.minRewardDuration),
+        lateEntryFeeBaseBps: Number(result.data.lateEntryFeeBaseBps),
+        lateEntryFeeMaxBps: Number(result.data.lateEntryFeeMaxBps),
+        lateEntryFeeScale: BigInt(result.data.lateEntryFeeScale),
+        authorPremiumBps: Number(result.data.authorPremiumBps),
+        earlyWithdrawPenaltyBps: Number(result.data.earlyWithdrawPenaltyBps),
+        yieldBearingEscrow: result.data.yieldBearingEscrow,
+        minStake: BigInt(result.data.minStake),
+        maxStake: BigInt(result.data.maxStake),
+      }
+    : undefined;
+
+  return {
+    ...result,
+    data: params,
+  };
 }
 
 /**

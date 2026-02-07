@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { CONTRACTS, DEFAULT_CHAIN_ID } from "~/lib/contracts";
+import { CONTRACTS, DEFAULT_CHAIN_ID, formatBps, formatLockPeriod } from "~/lib/contracts";
+import { useDefaultParams } from "~/hooks/useBeliefMarket";
 import { baseSepolia } from "wagmi/chains";
 
 const chainId = DEFAULT_CHAIN_ID;
@@ -10,6 +11,11 @@ const explorerUrl = chainId === baseSepolia.id
   : "https://basescan.org";
 
 export function AboutView() {
+  const { data: defaultParams } = useDefaultParams();
+
+  const lockPeriodLabel = defaultParams ? formatLockPeriod(defaultParams.lockPeriod) : "30 days";
+  const penaltyLabel = defaultParams ? formatBps(defaultParams.earlyWithdrawPenaltyBps) : "5%";
+
   return (
     <div className="px-4 py-4 space-y-4 max-w-lg mx-auto bg-white min-h-screen">
       <Link
@@ -54,8 +60,8 @@ export function AboutView() {
             <strong>Stake USDC</strong> to support or challenge a claim.
           </li>
           <li>
-            Principal is <strong>committed for 30 days</strong>. You can
-            withdraw early with a <strong>5% penalty</strong> (added to the
+            Principal is <strong>committed for {lockPeriodLabel}</strong>. You can
+            withdraw early with a <strong>{penaltyLabel} penalty</strong> (added to the
             reward pool), or wait for the full period to withdraw penalty-free.
           </li>
           <li>
@@ -96,7 +102,7 @@ export function AboutView() {
           </li>
           <li>
             <strong>Patience is rewarded</strong> &mdash; Early exits incur
-            a 5% penalty and forfeit pending rewards. Flash moves are dampened.
+            a {penaltyLabel} penalty and forfeit pending rewards. Flash moves are dampened.
           </li>
           <li>
             <strong>Explicit safety rails</strong> &mdash; Caps on rewards, no

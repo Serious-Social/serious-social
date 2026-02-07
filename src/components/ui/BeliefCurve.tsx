@@ -23,6 +23,7 @@ interface BeliefCurveProps {
   onInfoClick?: () => void;
   beliefChange24h?: number | null;
   participants?: { support: ProfileInfo[]; challenge: ProfileInfo[] };
+  earlyWithdrawPenaltyPercent?: string;
 }
 
 /** Format seconds into a human-readable duration */
@@ -55,7 +56,7 @@ function SegmentedBar({ percent, segments = 20 }: { percent: number; segments?: 
   );
 }
 
-export function BeliefCurve({ state, size = 'full', onInfoClick, beliefChange24h, participants }: BeliefCurveProps) {
+export function BeliefCurve({ state, size = 'full', onInfoClick, beliefChange24h, participants, earlyWithdrawPenaltyPercent }: BeliefCurveProps) {
   if (!state) {
     return (
       <div className="text-center text-theme-text-muted py-8">
@@ -192,7 +193,7 @@ export function BeliefCurve({ state, size = 'full', onInfoClick, beliefChange24h
           value={`$${formatUSDC(totalPrincipal)}`}
           accent
         />
-        <RewardPoolCard value={`$${formatUSDC(state.srpBalance)}`} />
+        <RewardPoolCard value={`$${formatUSDC(state.srpBalance)}`} earlyWithdrawPenaltyPercent={earlyWithdrawPenaltyPercent} />
       </div>
 
       {/* Explanatory note for unchallenged state */}
@@ -234,7 +235,7 @@ function StatCard({ label, value, accent }: { label: string; value: string; acce
   );
 }
 
-function RewardPoolCard({ value }: { value: string }) {
+function RewardPoolCard({ value, earlyWithdrawPenaltyPercent }: { value: string; earlyWithdrawPenaltyPercent?: string }) {
   const [showModal, setShowModal] = useState(false);
 
   return (
@@ -272,7 +273,7 @@ function RewardPoolCard({ value }: { value: string }) {
                 The <strong className="text-theme-text">Signal Reward Pool</strong> is a shared pool of USDC that grows over time and is distributed to committed participants.
               </p>
               <p>
-                <strong className="text-theme-text">Where it comes from:</strong> Entry fees are charged when you commit capital to an active market. These start small and gradually increase as more capital enters. Early withdrawal penalties (5% of principal) also feed the pool.
+                <strong className="text-theme-text">Where it comes from:</strong> Entry fees are charged when you commit capital to an active market. These start small and gradually increase as more capital enters. Early withdrawal penalties ({earlyWithdrawPenaltyPercent ?? '5%'} of principal) also feed the pool.
               </p>
               <p>
                 <strong className="text-theme-text">Who earns rewards:</strong> All active participants on both sides earn rewards proportional to their dollar-hours &mdash; the amount committed multiplied by how long it stays committed. The longer you stay and the more you commit, the larger your share.
