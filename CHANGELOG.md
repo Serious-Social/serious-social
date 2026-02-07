@@ -19,6 +19,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Post-commit success step now shows best friends picker instead of generic share button
 - Best friends API response now includes `displayName` and `pfpUrl`
 - Market participant POST now records commit amount for activity feed
+- Cache-bust share embed URLs with timestamp so each share gets a fresh OG image snapshot
 
 ## [2026-02-05]
 
