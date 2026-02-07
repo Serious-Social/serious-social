@@ -1,25 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getNeynarClient } from '~/lib/neynar';
+import { isValidCastHash } from '~/lib/postId';
 
 /**
  * GET /api/casts?fid=123
- * Fetch recent casts for a user by FID.
- * Returns only top-level casts (not replies) to keep the list clean.
+ * GET /api/casts?hash=0x...
+ * GET /api/casts?url=https://warpcast.com/...
+ * Fetch recent casts for a user by FID, or look up a single cast by hash or Warpcast URL.
  */
 export async function GET(request: NextRequest) {
   const fid = request.nextUrl.searchParams.get('fid');
   const hash = request.nextUrl.searchParams.get('hash');
+  const url = request.nextUrl.searchParams.get('url');
   const cursor = request.nextUrl.searchParams.get('cursor');
 
-  // If hash is provided, fetch a specific cast
+  // If hash is provided, fetch a specific cast by hash
   if (hash) {
-    return fetchCastByHash(hash);
+    if (!isValidCastHash(hash)) {
+      return NextResponse.json(
+        { error: 'Invalid cast hash format' },
+        { status: 400 }
+      );
+    }
+    return fetchCast(hash, 'hash');
+  }
+
+  // If url is provided, fetch a specific cast by Warpcast URL
+  if (url) {
+    try {
+      const parsed = new URL(url);
+      if (parsed.hostname !== 'warpcast.com' && parsed.hostname !== 'www.warpcast.com') {
+        return NextResponse.json(
+          { error: 'Only Warpcast URLs are supported' },
+          { status: 400 }
+        );
+      }
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid URL' },
+        { status: 400 }
+      );
+    }
+    return fetchCast(url, 'url');
   }
 
   // Otherwise, fetch user's casts by FID
   if (!fid) {
     return NextResponse.json(
-      { error: 'Missing fid or hash parameter' },
+      { error: 'Missing fid, hash, or url parameter' },
       { status: 400 }
     );
   }
@@ -75,14 +103,14 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * Fetch a specific cast by hash.
+ * Fetch a specific cast by hash or Warpcast URL.
  */
-async function fetchCastByHash(hash: string) {
+async function fetchCast(identifier: string, type: 'hash' | 'url') {
   try {
     const client = getNeynarClient();
     const response = await client.lookupCastByHashOrWarpcastUrl({
-      identifier: hash,
-      type: 'hash',
+      identifier,
+      type,
     });
 
     if (!response.cast) {

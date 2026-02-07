@@ -66,6 +66,12 @@ export function CreateMarketView() {
   const [amount, setAmount] = useState('10');
   const [step, setStep] = useState<Step>('select');
 
+  // URL lookup state
+  const [castUrl, setCastUrl] = useState('');
+  const [urlLookupLoading, setUrlLookupLoading] = useState(false);
+  const [urlLookupError, setUrlLookupError] = useState<string | null>(null);
+  const [urlCast, setUrlCast] = useState<Cast | null>(null);
+
   const amountBigInt = parseUSDC(amount);
   const amountNum = parseFloat(amount) || 0;
   const isValidAmount = amountBigInt >= minStake && amountBigInt <= maxStake;
@@ -217,6 +223,52 @@ export function CreateMarketView() {
     resetCreate();
   };
 
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const handleUrlLookup = async () => {
+    const trimmed = castUrl.trim();
+    if (!trimmed) return;
+
+    // Abort any in-flight lookup
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    setUrlLookupLoading(true);
+    setUrlLookupError(null);
+    setUrlCast(null);
+
+    try {
+      // Determine if it's a raw hash or a URL
+      const isHash = /^0x[0-9a-fA-F]{40}$/.test(trimmed);
+      if (trimmed.startsWith('0x') && !isHash) {
+        throw new Error('Invalid cast hash. Expected 0x followed by 40 hex characters.');
+      }
+
+      const params = isHash
+        ? new URLSearchParams({ hash: trimmed })
+        : new URLSearchParams({ url: trimmed });
+
+      const response = await fetch(`/api/casts?${params}`, { signal: controller.signal });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Cast not found');
+      }
+      const data = await response.json();
+      if (!data.cast) {
+        throw new Error('Cast not found');
+      }
+      setUrlCast(data.cast);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      setUrlLookupError(error instanceof Error ? error.message : 'Failed to look up cast');
+    } finally {
+      if (!controller.signal.aborted) {
+        setUrlLookupLoading(false);
+      }
+    }
+  };
+
   const handleProceed = async () => {
     if (!postId || !isValidAmount) return;
 
@@ -279,7 +331,7 @@ export function CreateMarketView() {
             <div className="w-5" />
           )}
           <h1 className="text-lg font-semibold text-theme-text flex-1 text-center">
-            {step === 'select' ? 'Select a Cast' : step === 'success' ? 'Market Created' : 'Create Market'}
+            {step === 'success' ? 'Market Created' : 'Create Market'}
           </h1>
           <div className="w-5" />
         </div>
@@ -327,9 +379,59 @@ export function CreateMarketView() {
         {/* Select cast step */}
         {context?.user?.fid && isConnected && !isWrongChain && step === 'select' && (
           <div className="space-y-4">
-            <p className="text-sm text-theme-text-muted">
-              Choose a cast to create a belief market for. Others will be able to support or challenge your claim.
-            </p>
+            {/* URL lookup section */}
+            <div className="bg-theme-surface border border-theme-border rounded-xl p-4 space-y-3">
+              <p className="text-sm font-medium text-theme-text">Challenge any cast</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={castUrl}
+                  onChange={(e) => setCastUrl(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleUrlLookup(); }}
+                  placeholder="Paste a Warpcast URL or cast hash..."
+                  aria-label="Warpcast URL or cast hash"
+                  className="flex-1 px-3 py-2 border border-theme-border bg-theme-bg rounded-lg focus:ring-2 focus:ring-theme-primary focus:border-transparent outline-none text-theme-text placeholder-theme-text-muted text-sm"
+                />
+                <button
+                  onClick={handleUrlLookup}
+                  disabled={urlLookupLoading || !castUrl.trim()}
+                  className="px-4 py-2 bg-gradient-primary hover:opacity-90 disabled:bg-theme-border disabled:cursor-not-allowed rounded-lg text-white text-sm font-medium transition-colors whitespace-nowrap"
+                >
+                  {urlLookupLoading ? 'Looking up...' : 'Look up'}
+                </button>
+              </div>
+
+              {urlLookupError && (
+                <p className="text-sm text-red-400">{urlLookupError}</p>
+              )}
+
+              {urlCast && (
+                <button
+                  onClick={() => handleSelectCast(urlCast)}
+                  className="w-full bg-theme-bg border border-theme-border rounded-lg p-3 text-left hover:border-theme-primary/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    {urlCast.author.pfpUrl && (
+                      <img
+                        src={urlCast.author.pfpUrl}
+                        alt={urlCast.author.displayName}
+                        className="w-6 h-6 rounded-full"
+                      />
+                    )}
+                    <span className="text-sm font-medium text-theme-text">{urlCast.author.displayName}</span>
+                    <span className="text-xs text-theme-text-muted">@{urlCast.author.username}</span>
+                  </div>
+                  <p className="text-sm text-theme-text line-clamp-3">{urlCast.text}</p>
+                  <p className="text-xs text-theme-primary mt-2">Create market on this cast &rarr;</p>
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3 text-theme-text-muted text-xs">
+              <div className="flex-1 border-t border-theme-border" />
+              <span>or pick one of your casts</span>
+              <div className="flex-1 border-t border-theme-border" />
+            </div>
 
             {castsLoading && (
               <div className="text-center py-8">
