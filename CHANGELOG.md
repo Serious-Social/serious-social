@@ -21,6 +21,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Market participant POST now records commit amount for activity feed
 - Cache-bust share embed URLs with timestamp so each share gets a fresh OG image snapshot
 
+### Fixed
+- Activity feed no longer breaks if a single KV entry is malformed (per-entry try/catch)
+- Market activity API still returns commits when Neynar is unavailable (fallback to `fid:<id>` identities)
+- Removed redundant Skip/Done buttons in post-commit success step
+
 ## [2026-02-05]
 
 ### Changed
