@@ -261,6 +261,79 @@ export async function addMarketParticipant(
   }
 }
 
+/*//////////////////////////////////////////////////////////////
+                    WALLET-FID TRACKING
+//////////////////////////////////////////////////////////////*/
+
+const PARTICIPANT_WALLETS_KEY = `${APP_NAME}:participant_wallets`;
+const walletFidStore = new Map<string, number>();
+const walletSetStore = new Set<string>();
+
+function getWalletFidKey(wallet: string): string {
+  return `${APP_NAME}:wallet_fid:${wallet.toLowerCase()}`;
+}
+
+/**
+ * Register a participant's wallet address and map it to their FID.
+ */
+export async function registerParticipantWallet(
+  wallet: string,
+  fid: number
+): Promise<void> {
+  const normalized = wallet.toLowerCase();
+  const key = getWalletFidKey(normalized);
+
+  if (redis) {
+    await Promise.all([
+      redis.sadd(PARTICIPANT_WALLETS_KEY, normalized),
+      redis.set(key, fid),
+    ]);
+  } else {
+    walletSetStore.add(normalized);
+    walletFidStore.set(key, fid);
+  }
+}
+
+/**
+ * Get all registered participant wallet addresses.
+ */
+export async function getAllParticipantWallets(): Promise<string[]> {
+  if (redis) {
+    return await redis.smembers(PARTICIPANT_WALLETS_KEY);
+  }
+  return Array.from(walletSetStore);
+}
+
+/**
+ * Batch-get wallet → FID mappings.
+ */
+export async function getWalletFids(
+  wallets: string[]
+): Promise<Map<string, number>> {
+  const result = new Map<string, number>();
+  if (wallets.length === 0) return result;
+
+  if (redis) {
+    const keys = wallets.map((w) => getWalletFidKey(w.toLowerCase()));
+    const values = await redis.mget<(number | null)[]>(...keys);
+    for (let i = 0; i < wallets.length; i++) {
+      if (values[i] != null) {
+        result.set(wallets[i].toLowerCase(), values[i]!);
+      }
+    }
+  } else {
+    for (const wallet of wallets) {
+      const key = getWalletFidKey(wallet.toLowerCase());
+      const fid = walletFidStore.get(key);
+      if (fid != null) {
+        result.set(wallet.toLowerCase(), fid);
+      }
+    }
+  }
+
+  return result;
+}
+
 export async function clearAllMarketData(): Promise<{ deletedKeys: number }> {
   if (redis) {
     // Get all recent market postIds so we can delete their cast mappings

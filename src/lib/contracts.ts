@@ -10,9 +10,9 @@ export const CONTRACTS = {
     usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as `0x${string}`, // USDC on Base
   },
   [baseSepolia.id]: {
-    factory: '0x789a11Ced3D407aD7CE4ADf1f7bFAf270b470773' as `0x${string}`,
-    vault: '0xa9dd8F720197fED811b746154Ac696B2320756e6' as `0x${string}`,
-    usdc: '0xEfA0e737B993Ae32DCB7c1c5C6878D25EE246cc4' as `0x${string}`, // Mock USDC on Base Sepolia
+    factory: '0xE62B65E236e2193189bF74401f9e9A86a8C885aE' as `0x${string}`,
+    vault: '0x64a4cEC841175a2E659D8717F7F774150B562aB1' as `0x${string}`,
+    usdc: '0x2cebb3DFf94B7cCB09FC218F91B70Ea35A0fFd1a' as `0x${string}`, // Mock USDC on Base Sepolia
   },
 } as const;
 
@@ -72,6 +72,13 @@ export const BELIEF_FACTORY_ABI = [
         ],
       },
     ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'reputationToken',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
     stateMutability: 'view',
   },
   {
@@ -168,6 +175,13 @@ export const BELIEF_MARKET_ABI = [
   {
     type: 'function',
     name: 'pendingRewards',
+    inputs: [{ name: 'positionId', type: 'uint256' }],
+    outputs: [{ name: 'amount', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'pendingReputation',
     inputs: [{ name: 'positionId', type: 'uint256' }],
     outputs: [{ name: 'amount', type: 'uint256' }],
     stateMutability: 'view',
@@ -281,6 +295,38 @@ export const ERC20_ABI = [
   },
 ] as const;
 
+// SRS (Seriousness) token ABI — minimal read-only
+export const SRS_TOKEN_ABI = [
+  {
+    type: 'function',
+    name: 'balanceOf',
+    inputs: [{ name: 'account', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'totalSupply',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'symbol',
+    inputs: [],
+    outputs: [{ name: '', type: 'string' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'decimals',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint8' }],
+    stateMutability: 'view',
+  },
+] as const;
+
 // Type definitions
 export enum Side {
   Support = 0,
@@ -349,6 +395,13 @@ export function parseUSDC(amount: string): bigint {
 export function formatBps(bps: number): string {
   const pct = bps / 100;
   return pct % 1 === 0 ? `${pct}%` : `${pct}%`;
+}
+
+// Format SRS amount (18 decimals)
+export function formatSRS(amount: bigint): string {
+  const num = Number(amount) / 1e18;
+  if (num < 0.01 && num > 0) return '<0.01';
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 // Format lock period seconds as human-readable duration, e.g. 2592000 → "30 days"

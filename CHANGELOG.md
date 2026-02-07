@@ -6,7 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Seriousness (SRS) reputation token integration: pending SRS per position and total balance in market view
+- Conviction leaderboard tab on home screen ranking users by SRS balance
+- Wallet-to-FID tracking for leaderboard profile resolution
+- `/api/leaderboard` endpoint with multicall batch balance reads
+
 ### Changed
+- Update contract addresses to new deployment with SRS token support
 - Read lock period, penalties, author premium, and stake limits from on-chain factory/market params instead of hardcoding in UI ([aeda529])
 
 ## [2026-02-05]
