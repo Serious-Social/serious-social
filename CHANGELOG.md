@@ -6,7 +6,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026-02-07]
+
 ### Added
+- "Challenge any cast" URL input on create page — paste a Warpcast URL or cast hash to create a market on anyone's cast ([4ece911])
 - "Friends in this market" section on market page — shows followed users who have participated
 - Activity feed on market page — merges on-chain commits with Farcaster replies in a unified timeline
 - Challenge-a-friend flow in post-commit modal — shows best friends as share targets with personalized @mention casts
@@ -15,6 +18,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `/api/market-activity` endpoint — merges KV commit entries with Neynar cast replies
 
 ### Changed
+- `/api/casts` route now supports `?url=` param for Warpcast URL lookups alongside existing `?hash=` and `?fid=` modes ([4ece911])
+- Create page header changed from "Select a Cast" to "Create a Market" to reflect the two creation paths ([4ece911])
+- Server-side validation for cast hash format and Warpcast URL host before calling Neynar ([4ece911])
 - Read lock period, penalties, author premium, and stake limits from on-chain factory/market params instead of hardcoding in UI ([aeda529])
 - Post-commit success step now shows best friends picker instead of generic share button
 - Best friends API response now includes `displayName` and `pfpUrl`
@@ -100,6 +106,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Info button on Reward Pool card with explainer modal ([590662b])
 - Three-bar belief signal visualization in OG image ([f87eba2])
 
+[4ece911]: https://github.com/Serious-Social/serious-social/commit/4ece911
 [aeda529]: https://github.com/Serious-Social/serious-social/commit/aeda529
 [0a189e5]: https://github.com/Serious-Social/serious-social/commit/0a189e5
 [518941d]: https://github.com/Serious-Social/serious-social/commit/518941d
