@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import type { MarketData } from "~/app/api/markets/route";
+import { LeaderboardTab } from "./LeaderboardTab";
 
 /**
  * HomeTab component displays the main landing content for the mini app.
@@ -11,6 +12,7 @@ import type { MarketData } from "~/app/api/markets/route";
  * It shows recent belief markets and a way to create new ones.
  */
 export function HomeTab({ fid }: { fid?: number }) {
+  const [activeTab, setActiveTab] = useState<'markets' | 'conviction'>('markets');
   const [markets, setMarkets] = useState<MarketData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,61 +69,93 @@ export function HomeTab({ fid }: { fid?: number }) {
         </p>
       </div>
 
-      {/* For You markets */}
-      {forYouLoading && fid && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-theme-text-muted">For You</h3>
-          <div className="space-y-3">
-            <SkeletonCard />
-            <SkeletonCard />
-          </div>
-        </div>
-      )}
-
-      {!forYouLoading && forYouMarkets.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-theme-text-muted">For You</h3>
-          <div className="space-y-3">
-            {forYouMarkets.map((market) => (
-              <MarketCard key={market.postId} market={market} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Recent markets */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium text-theme-text-muted">Recent Markets</h3>
-
-        {isLoading && (
-          <div className="space-y-3">
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </div>
-        )}
-
-        {error && (
-          <div className="text-center py-8 text-red-500 text-sm">
-            {error}
-          </div>
-        )}
-
-        {!isLoading && !error && markets.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-sm text-theme-text-muted">No markets yet.</p>
-            <p className="text-xs text-theme-text-muted/70 mt-1">Be the first to create one!</p>
-          </div>
-        )}
-
-        {!isLoading && !error && markets.length > 0 && (
-          <div className="space-y-3">
-            {markets.map((market) => (
-              <MarketCard key={market.postId} market={market} />
-            ))}
-          </div>
-        )}
+      {/* Tab switcher */}
+      <div className="flex bg-theme-surface border border-theme-border rounded-xl p-1">
+        <button
+          onClick={() => setActiveTab('markets')}
+          className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-colors ${
+            activeTab === 'markets'
+              ? 'bg-theme-bg text-theme-text shadow-sm'
+              : 'text-theme-text-muted hover:text-theme-text'
+          }`}
+        >
+          Markets
+        </button>
+        <button
+          onClick={() => setActiveTab('conviction')}
+          className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-colors ${
+            activeTab === 'conviction'
+              ? 'bg-theme-bg text-theme-text shadow-sm'
+              : 'text-theme-text-muted hover:text-theme-text'
+          }`}
+        >
+          Conviction
+        </button>
       </div>
+
+      {/* Markets content */}
+      {activeTab === 'markets' && (
+        <>
+          {/* For You markets */}
+          {forYouLoading && fid && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-theme-text-muted">For You</h3>
+              <div className="space-y-3">
+                <SkeletonCard />
+                <SkeletonCard />
+              </div>
+            </div>
+          )}
+
+          {!forYouLoading && forYouMarkets.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-theme-text-muted">For You</h3>
+              <div className="space-y-3">
+                {forYouMarkets.map((market) => (
+                  <MarketCard key={market.postId} market={market} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Recent markets */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-theme-text-muted">Recent Markets</h3>
+
+            {isLoading && (
+              <div className="space-y-3">
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+              </div>
+            )}
+
+            {error && (
+              <div className="text-center py-8 text-red-500 text-sm">
+                {error}
+              </div>
+            )}
+
+            {!isLoading && !error && markets.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-sm text-theme-text-muted">No markets yet.</p>
+                <p className="text-xs text-theme-text-muted/70 mt-1">Be the first to create one!</p>
+              </div>
+            )}
+
+            {!isLoading && !error && markets.length > 0 && (
+              <div className="space-y-3">
+                {markets.map((market) => (
+                  <MarketCard key={market.postId} market={market} />
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Conviction content */}
+      {activeTab === 'conviction' && <LeaderboardTab />}
 
       {/* Footer */}
       <div className="pt-4 border-t border-theme-border text-center">

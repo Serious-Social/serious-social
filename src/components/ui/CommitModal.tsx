@@ -88,6 +88,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
             postId,
             fid: context.user.fid,
             side: side === Side.Support ? 'support' : 'challenge',
+            wallet: address,
           }),
         }).catch((err) => console.error('Failed to record participant:', err));
       }

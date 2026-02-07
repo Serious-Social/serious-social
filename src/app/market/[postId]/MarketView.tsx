@@ -6,7 +6,8 @@ import { useFarcasterWithdraw, useFarcasterClaimRewards } from '~/hooks/useFarca
 import { BeliefCurve, StatusBadge, type ProfileInfo } from '~/components/ui/BeliefCurve';
 import { CommitModal } from '~/components/ui/CommitModal';
 import { ShareButton } from '~/components/ui/Share';
-import { formatUSDC, formatBps, formatLockPeriod, Side, Position, getMarketStatus } from '~/lib/contracts';
+import { formatUSDC, formatBps, formatLockPeriod, formatSRS, Side, Position, getMarketStatus } from '~/lib/contracts';
+import { useMyReputation, usePendingReputation } from '~/hooks/useReputation';
 import { useAccount } from 'wagmi';
 import { useState, useEffect, useRef } from 'react';
 
@@ -31,6 +32,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
   const { positions, refetch: refetchPositions } = useUserPositionDetails(marketAddress as `0x${string}` | undefined);
   const { data: marketParams } = useMarketParams(marketAddress as `0x${string}` | undefined);
   const { isConnected } = useAccount();
+  const { data: srsBalance } = useMyReputation();
 
   // Cast content state
   const [castContent, setCastContent] = useState<CastContent | null>(null);
@@ -253,6 +255,11 @@ export function MarketView({ postId, intent }: MarketViewProps) {
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
               Your Positions
+              {srsBalance != null && srsBalance > 0n && (
+                <span className="ml-auto text-xs font-normal text-theme-text-muted">
+                  {formatSRS(srsBalance)} SRS
+                </span>
+              )}
             </h2>
             <div className="space-y-3">
               {positions.map((pos) => (
@@ -402,6 +409,9 @@ function PositionCard({ position, marketAddress, minRewardDuration, earlyWithdra
   // Pending rewards
   const { data: pendingRewards } = usePendingRewards(marketAddress, position.id);
 
+  // Pending reputation (SRS)
+  const { data: pendingSRS } = usePendingReputation(marketAddress, position.id);
+
   // Withdraw hook
   const {
     withdraw,
@@ -470,15 +480,39 @@ function PositionCard({ position, marketAddress, minRewardDuration, earlyWithdra
       {/* Pending rewards or countdown */}
       {!position.withdrawn && (
         hasPendingRewards ? (
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-theme-text-muted">
-              Pending rewards: <span className="text-theme-positive font-medium">${formatUSDC(pendingRewards)}</span>
-            </span>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-theme-text-muted">
+                Pending rewards: <span className="text-theme-positive font-medium">${formatUSDC(pendingRewards)}</span>
+              </span>
+            </div>
+            {pendingSRS != null && pendingSRS > 0n && (
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-theme-text-muted">
+                  Pending seriousness: {formatSRS(pendingSRS)} SRS
+                </span>
+              </div>
+            )}
           </div>
         ) : rewardsCountdownRemaining != null ? (
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-theme-text-muted">
+                Rewards begin in <span className="text-theme-negative font-medium">{formatCountdown(rewardsCountdownRemaining)}</span>
+              </span>
+            </div>
+            {pendingSRS != null && pendingSRS > 0n && (
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-theme-text-muted">
+                  Pending seriousness: {formatSRS(pendingSRS)} SRS
+                </span>
+              </div>
+            )}
+          </div>
+        ) : pendingSRS != null && pendingSRS > 0n ? (
           <div className="flex items-center justify-between text-xs">
             <span className="text-theme-text-muted">
-              Rewards begin in <span className="text-theme-negative font-medium">{formatCountdown(rewardsCountdownRemaining)}</span>
+              Pending seriousness: {formatSRS(pendingSRS)} SRS
             </span>
           </div>
         ) : null
