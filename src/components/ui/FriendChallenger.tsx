@@ -39,7 +39,9 @@ export function FriendChallenger({ viewerFid, side, amount, postId, castText }: 
     (friendUsername?: string) => {
       const sideVerb = side === 'support' ? 'supported' : 'challenged';
       const baseUrl = APP_URL || (typeof window !== 'undefined' ? window.location.origin : '');
-      const marketUrl = `${baseUrl}/market/${postId}`;
+      const url = new URL(`${baseUrl}/market/${postId}`);
+      url.searchParams.set('t', Date.now().toString());
+      const marketUrl = url.toString();
 
       let text: string;
       if (friendUsername && castText) {

@@ -76,8 +76,9 @@ export function ShareButton({ buttonText, cast, className = '', isLoading = fals
             const baseUrl = APP_URL || window.location.origin;
             const url = new URL(`${baseUrl}${embed.path}`);
 
-            // Add UTM parameters
+            // Add UTM parameters and cache-bust so each share gets a fresh OG snapshot
             url.searchParams.set('utm_source', `share-cast-${context?.user?.fid || 'unknown'}`);
+            url.searchParams.set('t', Date.now().toString());
 
             // If custom image generator is provided, use it
             if (embed.imageUrl) {
