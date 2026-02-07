@@ -351,13 +351,21 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
               </p>
 
               {context?.user?.fid ? (
-                <FriendChallenger
-                  viewerFid={context.user.fid}
-                  side={side === Side.Support ? 'support' : 'challenge'}
-                  amount={formatUSDC(amountBigInt)}
-                  postId={postId}
-                  castText={castText}
-                />
+                <>
+                  <FriendChallenger
+                    viewerFid={context.user.fid}
+                    side={side === Side.Support ? 'support' : 'challenge'}
+                    amount={formatUSDC(amountBigInt)}
+                    postId={postId}
+                    castText={castText}
+                  />
+                  <button
+                    onClick={handleSuccess}
+                    className="w-full py-2 text-sm text-theme-text-muted hover:text-theme-text transition-colors"
+                  >
+                    Skip
+                  </button>
+                </>
               ) : (
                 <button
                   onClick={handleSuccess}
@@ -366,13 +374,6 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
                   Done
                 </button>
               )}
-
-              <button
-                onClick={handleSuccess}
-                className="w-full py-2 text-sm text-theme-text-muted hover:text-theme-text transition-colors"
-              >
-                Skip
-              </button>
             </div>
           )}
         </div>

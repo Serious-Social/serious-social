@@ -39,7 +39,8 @@ export function ActivityFeed({ postId }: ActivityFeedProps) {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
 
   useEffect(() => {
-    fetch(`/api/market-activity?postId=${postId}&limit=15`)
+    const params = new URLSearchParams({ postId, limit: '15' });
+    fetch(`/api/market-activity?${params.toString()}`)
       .then((res) => res.json())
       .then((data) => setActivities(data.activities || []))
       .catch((err) => console.error('Failed to fetch activity feed:', err));

@@ -24,13 +24,18 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const client = getNeynarClient();
-
-    // Fetch commit activities and cast mapping in parallel
+    // Fetch commit activities and cast mapping in parallel (no Neynar dependency)
     const [commitEntries, castMapping] = await Promise.all([
       getActivityEntries(postId, limit),
       getCastMapping(postId),
     ]);
+
+    let client: ReturnType<typeof getNeynarClient> | null = null;
+    try {
+      client = getNeynarClient();
+    } catch {
+      // Neynar unavailable — we'll still return commits with fallback identities
+    }
 
     // Fetch comment replies if castHash exists (non-blocking)
     const [commitsResult, commentsResult] = await Promise.allSettled([
@@ -38,14 +43,22 @@ export async function GET(request: NextRequest) {
       (async (): Promise<ActivityItem[]> => {
         if (commitEntries.length === 0) return [];
 
-        const uniqueFids = [...new Set(commitEntries.map((e) => e.fid))];
-        const { users } = await client.fetchBulkUsers({ fids: uniqueFids });
-        const userMap = new Map(
-          users.map((u) => [
-            u.fid,
-            { username: u.username, pfpUrl: u.pfp_url || '' },
-          ])
-        );
+        // Try to resolve profiles, fall back to fid-based identities
+        let userMap = new Map<number, { username: string; pfpUrl: string }>();
+        if (client) {
+          try {
+            const uniqueFids = [...new Set(commitEntries.map((e) => e.fid))];
+            const { users } = await client.fetchBulkUsers({ fids: uniqueFids });
+            userMap = new Map(
+              users.map((u) => [
+                u.fid,
+                { username: u.username, pfpUrl: u.pfp_url || '' },
+              ])
+            );
+          } catch (error) {
+            console.error('Failed to resolve commit profiles, using fallback identities:', error);
+          }
+        }
 
         return commitEntries.map((entry) => {
           const profile = userMap.get(entry.fid);
@@ -62,7 +75,7 @@ export async function GET(request: NextRequest) {
       })(),
       // Fetch Farcaster replies as comments
       (async (): Promise<ActivityItem[]> => {
-        if (!castMapping?.castHash) return [];
+        if (!client || !castMapping?.castHash) return [];
 
         const conversation = await client.lookupCastConversation({
           identifier: castMapping.castHash,

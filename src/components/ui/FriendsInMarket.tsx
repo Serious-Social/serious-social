@@ -22,7 +22,8 @@ export function FriendsInMarket({ postId, viewerFid }: FriendsInMarketProps) {
   useEffect(() => {
     if (!viewerFid) return;
 
-    fetch(`/api/market-participants/friends?postId=${postId}&viewerFid=${viewerFid}`)
+    const params = new URLSearchParams({ postId, viewerFid: String(viewerFid) });
+    fetch(`/api/market-participants/friends?${params.toString()}`)
       .then((res) => res.json())
       .then((data) => setFriends(data.friends || []))
       .catch((err) => console.error('Failed to fetch friends in market:', err));

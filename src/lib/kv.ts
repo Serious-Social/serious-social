@@ -310,13 +310,27 @@ export async function getActivityEntries(
 
   if (redis) {
     const raw = await redis.lrange(key, 0, limit - 1);
-    return raw.map((item: string | ActivityEntry) =>
-      typeof item === 'string' ? JSON.parse(item) as ActivityEntry : item
-    );
+    const entries: ActivityEntry[] = [];
+    for (const item of raw as Array<string | ActivityEntry>) {
+      try {
+        entries.push(typeof item === 'string' ? JSON.parse(item) as ActivityEntry : item);
+      } catch {
+        // Skip malformed entries
+      }
+    }
+    return entries;
   }
 
   const list = activityStore.get(key) || [];
-  return list.slice(0, limit).map((s) => JSON.parse(s) as ActivityEntry);
+  const entries: ActivityEntry[] = [];
+  for (const s of list.slice(0, limit)) {
+    try {
+      entries.push(JSON.parse(s) as ActivityEntry);
+    } catch {
+      // Skip malformed entries
+    }
+  }
+  return entries;
 }
 
 export async function clearAllMarketData(): Promise<{ deletedKeys: number }> {
