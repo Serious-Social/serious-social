@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getNeynarClient } from '~/lib/neynar';
+import { isValidCastHash } from '~/lib/postId';
 
 /**
  * GET /api/casts?fid=123
@@ -15,18 +16,38 @@ export async function GET(request: NextRequest) {
 
   // If hash is provided, fetch a specific cast by hash
   if (hash) {
+    if (!isValidCastHash(hash)) {
+      return NextResponse.json(
+        { error: 'Invalid cast hash format' },
+        { status: 400 }
+      );
+    }
     return fetchCast(hash, 'hash');
   }
 
   // If url is provided, fetch a specific cast by Warpcast URL
   if (url) {
+    try {
+      const parsed = new URL(url);
+      if (parsed.hostname !== 'warpcast.com' && parsed.hostname !== 'www.warpcast.com') {
+        return NextResponse.json(
+          { error: 'Only Warpcast URLs are supported' },
+          { status: 400 }
+        );
+      }
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid URL' },
+        { status: 400 }
+      );
+    }
     return fetchCast(url, 'url');
   }
 
   // Otherwise, fetch user's casts by FID
   if (!fid) {
     return NextResponse.json(
-      { error: 'Missing fid or hash parameter' },
+      { error: 'Missing fid, hash, or url parameter' },
       { status: 400 }
     );
   }

@@ -223,9 +223,16 @@ export function CreateMarketView() {
     resetCreate();
   };
 
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const handleUrlLookup = async () => {
     const trimmed = castUrl.trim();
     if (!trimmed) return;
+
+    // Abort any in-flight lookup
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     setUrlLookupLoading(true);
     setUrlLookupError(null);
@@ -233,12 +240,16 @@ export function CreateMarketView() {
 
     try {
       // Determine if it's a raw hash or a URL
-      const isHash = /^0x[0-9a-fA-F]+$/.test(trimmed);
+      const isHash = /^0x[0-9a-fA-F]{40}$/.test(trimmed);
+      if (trimmed.startsWith('0x') && !isHash) {
+        throw new Error('Invalid cast hash. Expected 0x followed by 40 hex characters.');
+      }
+
       const params = isHash
         ? new URLSearchParams({ hash: trimmed })
         : new URLSearchParams({ url: trimmed });
 
-      const response = await fetch(`/api/casts?${params}`);
+      const response = await fetch(`/api/casts?${params}`, { signal: controller.signal });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         throw new Error(data.error || 'Cast not found');
@@ -249,9 +260,12 @@ export function CreateMarketView() {
       }
       setUrlCast(data.cast);
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       setUrlLookupError(error instanceof Error ? error.message : 'Failed to look up cast');
     } finally {
-      setUrlLookupLoading(false);
+      if (!controller.signal.aborted) {
+        setUrlLookupLoading(false);
+      }
     }
   };
 
@@ -375,6 +389,7 @@ export function CreateMarketView() {
                   onChange={(e) => setCastUrl(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleUrlLookup(); }}
                   placeholder="Paste a Warpcast URL or cast hash..."
+                  aria-label="Warpcast URL or cast hash"
                   className="flex-1 px-3 py-2 border border-theme-border bg-theme-bg rounded-lg focus:ring-2 focus:ring-theme-primary focus:border-transparent outline-none text-theme-text placeholder-theme-text-muted text-sm"
                 />
                 <button
