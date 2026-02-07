@@ -6,7 +6,10 @@ import { useFarcasterWithdraw, useFarcasterClaimRewards } from '~/hooks/useFarca
 import { BeliefCurve, StatusBadge, type ProfileInfo } from '~/components/ui/BeliefCurve';
 import { CommitModal } from '~/components/ui/CommitModal';
 import { ShareButton } from '~/components/ui/Share';
+import { FriendsInMarket } from '~/components/ui/FriendsInMarket';
+import { ActivityFeed } from '~/components/ui/ActivityFeed';
 import { formatUSDC, formatBps, formatLockPeriod, Side, Position, getMarketStatus } from '~/lib/contracts';
+import { useMiniApp } from '@neynar/react';
 import { useAccount } from 'wagmi';
 import { useState, useEffect, useRef } from 'react';
 
@@ -31,6 +34,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
   const { positions, refetch: refetchPositions } = useUserPositionDetails(marketAddress as `0x${string}` | undefined);
   const { data: marketParams } = useMarketParams(marketAddress as `0x${string}` | undefined);
   const { isConnected } = useAccount();
+  const { context } = useMiniApp();
 
   // Cast content state
   const [castContent, setCastContent] = useState<CastContent | null>(null);
@@ -245,6 +249,9 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           />
         </section>
 
+        {/* Friends in this market */}
+        <FriendsInMarket postId={postId} viewerFid={context?.user?.fid} />
+
         {/* User's positions - prominent after staking (per UX spec) */}
         {isConnected && positions.length > 0 && (
           <section className="bg-gradient-to-br from-theme-primary/10 to-theme-surface border-2 border-theme-primary/30 rounded-xl p-4">
@@ -271,6 +278,9 @@ export function MarketView({ postId, intent }: MarketViewProps) {
             </div>
           </section>
         )}
+
+        {/* Activity feed */}
+        <ActivityFeed postId={postId} />
 
         {/* Share button (secondary action) */}
         <section>

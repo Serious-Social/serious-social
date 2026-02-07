@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAccount, useConnect, useSwitchChain } from 'wagmi';
 import { useMiniApp } from '@neynar/react';
 import { useCommitFlow } from '~/hooks/useBeliefMarketWrite';
-import { ShareButton } from '~/components/ui/Share';
+import { FriendChallenger } from '~/components/ui/FriendChallenger';
 import { Side, formatUSDC, parseUSDC, formatBps, formatLockPeriod, DEFAULT_CHAIN_ID, CONTRACTS } from '~/lib/contracts';
 
 interface CommitModalProps {
@@ -88,6 +88,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
             postId,
             fid: context.user.fid,
             side: side === Side.Support ? 'support' : 'challenge',
+            amount: formatUSDC(amountBigInt),
           }),
         }).catch((err) => console.error('Failed to record participant:', err));
       }
@@ -349,23 +350,30 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
                 Challenge your friends to weigh in.
               </p>
 
-              <ShareButton
-                buttonText="Share to Farcaster"
-                className="w-full py-3 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
-                cast={{
-                  text: castText
-                    ? `I just ${side === Side.Support ? 'supported' : 'challenged'} this claim with $${formatUSDC(amountBigInt)}:\n\n"${castText.slice(0, 100)}${castText.length > 100 ? '...' : ''}"\n\nDo you agree? Put your money where your mouth is.`
-                    : `I just ${side === Side.Support ? 'supported' : 'challenged'} a belief market with $${formatUSDC(amountBigInt)}. Do you agree? Put your money where your mouth is.`,
-                  embeds: [{ path: `/market/${postId}` }],
-                }}
-              />
-
-              <button
-                onClick={handleSuccess}
-                className="w-full py-2 text-sm text-theme-text-muted hover:text-theme-text transition-colors"
-              >
-                Skip
-              </button>
+              {context?.user?.fid ? (
+                <>
+                  <FriendChallenger
+                    viewerFid={context.user.fid}
+                    side={side === Side.Support ? 'support' : 'challenge'}
+                    amount={formatUSDC(amountBigInt)}
+                    postId={postId}
+                    castText={castText}
+                  />
+                  <button
+                    onClick={handleSuccess}
+                    className="w-full py-2 text-sm text-theme-text-muted hover:text-theme-text transition-colors"
+                  >
+                    Skip
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleSuccess}
+                  className="w-full py-3 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
+                >
+                  Done
+                </button>
+              )}
             </div>
           )}
         </div>

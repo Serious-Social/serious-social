@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getMarketParticipants, addMarketParticipant } from '~/lib/kv';
+import { getMarketParticipants, addMarketParticipant, addActivityEntry } from '~/lib/kv';
 import { getNeynarClient } from '~/lib/neynar';
 
 export async function GET(request: NextRequest) {
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { postId, fid, side } = await request.json();
+    const { postId, fid, side, amount } = await request.json();
 
     if (!postId || !fid || !side) {
       return NextResponse.json(
@@ -71,6 +71,16 @@ export async function POST(request: NextRequest) {
     }
 
     await addMarketParticipant(postId, fid, side);
+
+    // Record activity entry for the feed
+    await addActivityEntry(postId, {
+      type: 'commit',
+      fid,
+      side,
+      amount: amount || '0',
+      timestamp: Date.now(),
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Failed to add market participant:', error);
