@@ -33,9 +33,25 @@ export async function GET(request: Request) {
       throw new Error(`Neynar API error: ${response.statusText}`);
     }
 
-    const { users } = await response.json() as { users: { user: { fid: number; username: string } }[] };
+    const { users } = await response.json() as {
+      users: {
+        user: {
+          fid: number;
+          username: string;
+          display_name?: string;
+          pfp_url?: string;
+        };
+      }[];
+    };
 
-    return NextResponse.json({ bestFriends: users });
+    const bestFriends = users.map(({ user }) => ({
+      fid: user.fid,
+      username: user.username,
+      displayName: user.display_name || user.username,
+      pfpUrl: user.pfp_url || '',
+    }));
+
+    return NextResponse.json({ bestFriends });
   } catch (error) {
     console.error('Failed to fetch best friends:', error);
     return NextResponse.json(

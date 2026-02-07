@@ -6,8 +6,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- "Friends in this market" section on market page — shows followed users who have participated
+- Activity feed on market page — merges on-chain commits with Farcaster replies in a unified timeline
+- Challenge-a-friend flow in post-commit modal — shows best friends as share targets with personalized @mention casts
+- Per-market activity log in KV (commit events with LPUSH/LTRIM pattern)
+- `/api/market-participants/friends` endpoint — intersects viewer's following list with market participants
+- `/api/market-activity` endpoint — merges KV commit entries with Neynar cast replies
+
 ### Changed
 - Read lock period, penalties, author premium, and stake limits from on-chain factory/market params instead of hardcoding in UI ([aeda529])
+- Post-commit success step now shows best friends picker instead of generic share button
+- Best friends API response now includes `displayName` and `pfpUrl`
+- Market participant POST now records commit amount for activity feed
 
 ## [2026-02-05]
 

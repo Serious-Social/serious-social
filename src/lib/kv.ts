@@ -261,6 +261,64 @@ export async function addMarketParticipant(
   }
 }
 
+/*//////////////////////////////////////////////////////////////
+                      ACTIVITY LOG
+//////////////////////////////////////////////////////////////*/
+
+export interface ActivityEntry {
+  type: 'commit';
+  fid: number;
+  side: 'support' | 'challenge';
+  amount: string;      // formatted USDC, e.g. "25.00"
+  timestamp: number;   // Unix ms
+}
+
+const MAX_ACTIVITY_ENTRIES = 50;
+
+// In-memory fallback for activity entries
+const activityStore = new Map<string, string[]>();
+
+function getActivityKey(postId: string): string {
+  return `${APP_NAME}:activity:${postId}`;
+}
+
+export async function addActivityEntry(
+  postId: string,
+  entry: ActivityEntry
+): Promise<void> {
+  const key = getActivityKey(postId);
+  const serialized = JSON.stringify(entry);
+
+  if (redis) {
+    await redis.lpush(key, serialized);
+    await redis.ltrim(key, 0, MAX_ACTIVITY_ENTRIES - 1);
+  } else {
+    const list = activityStore.get(key) || [];
+    list.unshift(serialized);
+    if (list.length > MAX_ACTIVITY_ENTRIES) {
+      list.pop();
+    }
+    activityStore.set(key, list);
+  }
+}
+
+export async function getActivityEntries(
+  postId: string,
+  limit: number = 15
+): Promise<ActivityEntry[]> {
+  const key = getActivityKey(postId);
+
+  if (redis) {
+    const raw = await redis.lrange(key, 0, limit - 1);
+    return raw.map((item: string | ActivityEntry) =>
+      typeof item === 'string' ? JSON.parse(item) as ActivityEntry : item
+    );
+  }
+
+  const list = activityStore.get(key) || [];
+  return list.slice(0, limit).map((s) => JSON.parse(s) as ActivityEntry);
+}
+
 export async function clearAllMarketData(): Promise<{ deletedKeys: number }> {
   if (redis) {
     // Get all recent market postIds so we can delete their cast mappings
