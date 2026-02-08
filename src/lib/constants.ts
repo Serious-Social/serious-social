@@ -83,7 +83,7 @@ export const APP_ACCOUNT_ASSOCIATION: AccountAssociation | undefined = {
  * Text displayed on the main action button.
  * Used for the primary call-to-action in the mini app.
  */
-export const APP_BUTTON_TEXT: string = 'Let\'s Get Serious';
+export const APP_BUTTON_TEXT: string = 'Put your 💵 where your 👄 is';
 
 // --- Integration Configuration ---
 /**
