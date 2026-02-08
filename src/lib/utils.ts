@@ -38,7 +38,6 @@ export function getMiniAppEmbedMetadata(options?: {
   return {
     version: 'next',
     imageUrl: ogImageUrl ?? APP_OG_IMAGE_URL,
-    imageAspectRatio: '1.91:1',
     ogTitle: title ?? APP_NAME,
     ogDescription: description ?? APP_DESCRIPTION,
     ogImageUrl: ogImageUrl ?? APP_OG_IMAGE_URL,

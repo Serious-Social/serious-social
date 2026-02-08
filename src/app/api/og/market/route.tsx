@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
           <h1 style={{ fontSize: 60, color: THEME.text }}>Invalid Market</h1>
         </div>
       ),
-      { width: 1200, height: 630 }
+      { width: 1200, height: 800 }
     );
   }
 
@@ -383,7 +383,7 @@ export async function GET(request: NextRequest) {
     ),
     {
       width: 1200,
-      height: 630,
+      height: 800,
     }
   );
 }

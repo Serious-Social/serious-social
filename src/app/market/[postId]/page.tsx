@@ -55,7 +55,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         {
           url: ogImageUrl,
           width: 1200,
-          height: 630,
+          height: 800,
           alt: 'Belief Market',
         },
       ],
