@@ -19,6 +19,7 @@ import {
   CONTRACTS,
   MIN_STAKE,
   MAX_STAKE,
+  Side,
 } from '~/lib/contracts';
 import { ShareButton } from '~/components/ui/Share';
 
@@ -65,6 +66,7 @@ export function CreateMarketView() {
   const [selectedCast, setSelectedCast] = useState<Cast | null>(null);
   const [amount, setAmount] = useState('10');
   const [step, setStep] = useState<Step>('select');
+  const [selectedSide, setSelectedSide] = useState<Side>(Side.Support);
 
   // URL lookup state
   const [castUrl, setCastUrl] = useState('');
@@ -218,6 +220,7 @@ export function CreateMarketView() {
 
   const handleBack = () => {
     setSelectedCast(null);
+    setSelectedSide(Side.Support);
     setStep('select');
     resetApprove();
     resetCreate();
@@ -283,7 +286,7 @@ export function CreateMarketView() {
     } else {
       setStep('create');
       try {
-        await createMarketTx(postId, amountBigInt);
+        await createMarketTx(postId, amountBigInt, selectedSide);
         // Success will be handled by the useEffect
       } catch (err) {
         console.error('Create market failed:', err);
@@ -294,7 +297,7 @@ export function CreateMarketView() {
   const handleCreate = async () => {
     if (!postId) return;
     try {
-      await createMarketTx(postId, amountBigInt);
+      await createMarketTx(postId, amountBigInt, selectedSide);
       // Success will be handled by the useEffect
     } catch (err) {
       console.error('Create market failed:', err);
@@ -308,6 +311,7 @@ export function CreateMarketView() {
   };
 
   const isWrongChain = chain?.id !== DEFAULT_CHAIN_ID;
+  const isOwnCast = selectedCast?.author.fid === context?.user?.fid;
   const canProceed = selectedCast && isValidAmount && hasBalance(amountBigInt) && !marketExists;
 
   return (
@@ -483,6 +487,35 @@ export function CreateMarketView() {
               <p className="text-theme-text">{selectedCast.text}</p>
             </div>
 
+            {/* Side picker — only shown for other people's casts */}
+            {!isOwnCast && (
+              <div className="bg-theme-surface border border-theme-border rounded-xl p-4">
+                <p className="text-xs font-medium text-theme-text mb-3">Your stance</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setSelectedSide(Side.Support)}
+                    className={`flex-1 py-2.5 px-4 rounded-full border text-sm font-medium transition-colors ${
+                      selectedSide === Side.Support
+                        ? 'bg-theme-positive/20 border-theme-positive text-theme-positive'
+                        : 'border-theme-border text-theme-text-muted hover:border-theme-text-muted'
+                    }`}
+                  >
+                    {selectedSide === Side.Support && '✓ '}Support
+                  </button>
+                  <button
+                    onClick={() => setSelectedSide(Side.Oppose)}
+                    className={`flex-1 py-2.5 px-4 rounded-full border text-sm font-medium transition-colors ${
+                      selectedSide === Side.Oppose
+                        ? 'bg-theme-negative/20 border-theme-negative text-theme-negative'
+                        : 'border-theme-border text-theme-text-muted hover:border-theme-text-muted'
+                    }`}
+                  >
+                    {selectedSide === Side.Oppose && '✓ '}Challenge
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Market exists warning */}
             {marketExists && (
               <div className="bg-theme-negative/10 border border-theme-negative/30 rounded-xl p-4">
@@ -546,10 +579,15 @@ export function CreateMarketView() {
                 {/* Info box */}
                 <div className="bg-theme-bg border border-theme-border rounded-lg p-4 text-sm text-theme-text-muted space-y-2">
                   <p><strong className="text-theme-text">By creating this market:</strong></p>
+                  {selectedSide === Side.Support ? (
+                    <p>You&apos;re backing this claim — you believe it&apos;s true.</p>
+                  ) : (
+                    <p>You&apos;re challenging this claim — you believe it&apos;s wrong.</p>
+                  )}
                   <ul className="list-disc list-inside space-y-1">
                     <li>Your USDC is committed for {defaultParams ? formatLockPeriod(defaultParams.lockPeriod) : '30 days'} ({defaultParams ? formatBps(defaultParams.earlyWithdrawPenaltyBps) : '5%'} early withdrawal penalty)</li>
-                    <li>A {defaultParams ? formatBps(defaultParams.authorPremiumBps) : '2%'} author premium funds the reward pool</li>
-                    <li>Others can support or challenge your claim</li>
+                    <li>A {defaultParams ? formatBps(defaultParams.authorPremiumBps) : '2%'} creator premium funds the reward pool</li>
+                    <li>Others can support or challenge this claim</li>
                   </ul>
                 </div>
 
@@ -678,7 +716,11 @@ export function CreateMarketView() {
 
             <div className="bg-theme-bg border border-theme-border rounded-lg p-4">
               <p className="text-xs text-theme-text-muted mb-1">
-                {selectedCast.author.fid === context?.user?.fid ? 'Your claim' : `${selectedCast.author.displayName}'s claim`}
+                {isOwnCast
+                  ? 'Supporting your claim'
+                  : selectedSide === Side.Support
+                    ? `Supporting @${selectedCast.author.username}'s claim`
+                    : `Challenging @${selectedCast.author.username}'s claim`}
               </p>
               <p className="text-sm text-theme-text line-clamp-3">{selectedCast.text}</p>
             </div>
@@ -701,9 +743,11 @@ export function CreateMarketView() {
                 buttonText="Share on Farcaster"
                 className="w-full py-3 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
                 cast={{
-                  text: selectedCast.author.fid === context?.user?.fid
+                  text: isOwnCast
                     ? `I just put $${formatUSDC(amountBigInt)} behind my claim:\n\n"${selectedCast.text.slice(0, 100)}${selectedCast.text.length > 100 ? '...' : ''}"\n\nDo you agree? Commit to your stance.`
-                    : `I just put $${formatUSDC(amountBigInt)} behind @${selectedCast.author.username}'s claim:\n\n"${selectedCast.text.slice(0, 100)}${selectedCast.text.length > 100 ? '...' : ''}"\n\nDo you agree? Commit to your stance.`,
+                    : selectedSide === Side.Support
+                      ? `I just put $${formatUSDC(amountBigInt)} behind @${selectedCast.author.username}'s claim:\n\n"${selectedCast.text.slice(0, 100)}${selectedCast.text.length > 100 ? '...' : ''}"\n\nDo you agree? Commit to your stance.`
+                      : `I just put $${formatUSDC(amountBigInt)} challenging @${selectedCast.author.username}'s claim:\n\n"${selectedCast.text.slice(0, 100)}${selectedCast.text.length > 100 ? '...' : ''}"\n\nDo you agree? Commit to your stance.`,
                   embeds: [{ path: `/market/${postId}` }],
                 }}
               />

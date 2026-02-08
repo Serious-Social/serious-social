@@ -46,6 +46,7 @@ export const BELIEF_FACTORY_ABI = [
     inputs: [
       { name: 'postId', type: 'bytes32' },
       { name: 'initialCommitment', type: 'uint256' },
+      { name: 'initialSide', type: 'uint8' },
     ],
     outputs: [{ name: 'market', type: 'address' }],
     stateMutability: 'nonpayable',
