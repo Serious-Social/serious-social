@@ -677,7 +677,9 @@ export function CreateMarketView() {
             </div>
 
             <div className="bg-theme-bg border border-theme-border rounded-lg p-4">
-              <p className="text-xs text-theme-text-muted mb-1">Your claim</p>
+              <p className="text-xs text-theme-text-muted mb-1">
+                {selectedCast.author.fid === context?.user?.fid ? 'Your claim' : `${selectedCast.author.displayName}'s claim`}
+              </p>
               <p className="text-sm text-theme-text line-clamp-3">{selectedCast.text}</p>
             </div>
 
@@ -699,7 +701,9 @@ export function CreateMarketView() {
                 buttonText="Share on Farcaster"
                 className="w-full py-3 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
                 cast={{
-                  text: `I just put $${formatUSDC(amountBigInt)} behind my claim:\n\n"${selectedCast.text.slice(0, 100)}${selectedCast.text.length > 100 ? '...' : ''}"\n\nDo you agree? Commit to your stance.`,
+                  text: selectedCast.author.fid === context?.user?.fid
+                    ? `I just put $${formatUSDC(amountBigInt)} behind my claim:\n\n"${selectedCast.text.slice(0, 100)}${selectedCast.text.length > 100 ? '...' : ''}"\n\nDo you agree? Commit to your stance.`
+                    : `I just put $${formatUSDC(amountBigInt)} behind @${selectedCast.author.username}'s claim:\n\n"${selectedCast.text.slice(0, 100)}${selectedCast.text.length > 100 ? '...' : ''}"\n\nDo you agree? Commit to your stance.`,
                   embeds: [{ path: `/market/${postId}` }],
                 }}
               />
