@@ -743,11 +743,20 @@ export function CreateMarketView() {
                 buttonText="Share on Farcaster"
                 className="w-full py-3 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
                 cast={{
-                  text: isOwnCast
-                    ? `I just put $${formatUSDC(amountBigInt)} behind my claim:\n\n"${selectedCast.text.slice(0, 100)}${selectedCast.text.length > 100 ? '...' : ''}"\n\nDo you agree? Commit to your stance.`
-                    : selectedSide === Side.Support
-                      ? `I just put $${formatUSDC(amountBigInt)} behind @${selectedCast.author.username}'s claim:\n\n"${selectedCast.text.slice(0, 100)}${selectedCast.text.length > 100 ? '...' : ''}"\n\nDo you agree? Commit to your stance.`
-                      : `I just put $${formatUSDC(amountBigInt)} challenging @${selectedCast.author.username}'s claim:\n\n"${selectedCast.text.slice(0, 100)}${selectedCast.text.length > 100 ? '...' : ''}"\n\nDo you agree? Commit to your stance.`,
+                  text: (() => {
+                    const action = isOwnCast
+                      ? `I just put $${formatUSDC(amountBigInt)} behind my claim:`
+                      : selectedSide === Side.Support
+                        ? `I just put $${formatUSDC(amountBigInt)} behind @${selectedCast.author.username}'s claim:`
+                        : `I just put $${formatUSDC(amountBigInt)} challenging @${selectedCast.author.username}'s claim:`;
+                    const cta = 'Do you agree? Put your money where your mouth is.';
+                    // Farcaster allows 1024 bytes; leave room for action line, quotes, newlines, and CTA
+                    const maxSnippet = 1024 - action.length - cta.length - 8; // 8 for \n\n"..."\n\n
+                    const snippet = selectedCast.text.length > maxSnippet
+                      ? selectedCast.text.slice(0, maxSnippet) + '...'
+                      : selectedCast.text;
+                    return `${action}\n\n"${snippet}"\n\n${cta}`;
+                  })(),
                   embeds: [{ path: `/market/${postId}` }],
                 }}
               />
