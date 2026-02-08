@@ -21,7 +21,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `/api/casts` route now supports `?url=` param for Warpcast URL lookups alongside existing `?hash=` and `?fid=` modes ([4ece911])
 - Create page header changed from "Select a Cast" to "Create a Market" to reflect the two creation paths ([4ece911])
 - Server-side validation for cast hash format and Warpcast URL host before calling Neynar ([4ece911])
-- Read lock period, penalties, author premium, and stake limits from on-chain factory/market params instead of hardcoding in UI ([aeda529])
+- Read lock period, penalties, creator premium, and stake limits from on-chain factory/market params instead of hardcoding in UI ([aeda529])
 - Post-commit success step now shows best friends picker instead of generic share button
 - Best friends API response now includes `displayName` and `pfpUrl`
 - Market participant POST now records commit amount for activity feed

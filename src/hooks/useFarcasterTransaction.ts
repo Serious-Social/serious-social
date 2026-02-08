@@ -178,11 +178,11 @@ export function useFarcasterApproveUSDC() {
 export function useFarcasterCreateMarket() {
   const { sendTransaction, hash, isPending, isConfirming, isSuccess, error, reset } = useFarcasterTransaction();
 
-  const createMarket = useCallback(async (postId: `0x${string}`, initialCommitment: bigint) => {
+  const createMarket = useCallback(async (postId: `0x${string}`, initialCommitment: bigint, initialSide: number) => {
     const data = encodeFunctionData({
       abi: BELIEF_FACTORY_ABI,
       functionName: 'createMarket',
-      args: [postId, initialCommitment],
+      args: [postId, initialCommitment, initialSide],
     });
 
     return sendTransaction({
