@@ -63,7 +63,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
   // Swipe tracking
   const touchRef = useRef<{ x: number; y: number } | null>(null);
 
-  const tabs = ['Signal', 'Activity', 'Position'];
+  const tabs = ['Breakdown', 'Activity', 'My Position'];
 
   const switchTab = (i: number) => {
     setActiveTab(i);
@@ -293,7 +293,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
               role="tab"
               aria-selected={activeTab === i}
               onClick={() => switchTab(i)}
-              className={`flex-1 py-2.5 text-xs font-medium transition-colors relative flex items-center justify-center gap-1 ${
+              className={`flex-1 py-3 text-xs font-medium transition-colors relative flex items-center justify-center gap-1 ${
                 activeTab === i
                   ? 'text-theme-text font-bold'
                   : 'text-theme-text-muted'
@@ -408,13 +408,13 @@ export function MarketView({ postId, intent }: MarketViewProps) {
             onClick={() => handleOpenModal(Side.Support)}
             className="flex-1 py-4 rounded-xl font-medium transition-all bg-theme-surface border border-theme-border text-theme-text hover:bg-theme-border active:scale-[0.98]"
           >
-            Support
+            SUPPORT
           </button>
           <button
             onClick={() => handleOpenModal(Side.Oppose)}
             className="flex-1 py-4 rounded-xl font-medium transition-all bg-gradient-primary text-white hover:opacity-90 active:scale-[0.98]"
           >
-            Challenge
+            CHALLENGE
           </button>
         </div>
       </div>
@@ -431,9 +431,9 @@ export function MarketView({ postId, intent }: MarketViewProps) {
               <h2 className="text-sm font-bold text-theme-text mb-3">How Belief Markets Work</h2>
               <div className="space-y-3 pb-6">
                 {[
-                  { n: '01', title: 'Commit Capital', desc: `Support or Challenge a claim by committing USDC. Your capital is committed for ${marketParams ? formatLockPeriod(marketParams.lockPeriod) : '30 days'}.` },
-                  { n: '02', title: 'Time-Weighted Signal', desc: 'The longer your capital stays committed, the more it contributes to the belief signal. Earlier and longer commitments earn more rewards.' },
-                  { n: '03', title: 'Earn Rewards', desc: `Rewards come from a shared pool, not other participants. Early withdrawal incurs a ${marketParams ? formatBps(marketParams.earlyWithdrawPenaltyBps) : '5%'} penalty. Your principal is returned after the commitment period.` },
+                  { n: '01', title: 'Pick a Side', desc: `Commit USDC to Support or Challenge. Locked for ${marketParams ? formatLockPeriod(marketParams.lockPeriod) : '30 days'}.` },
+                  { n: '02', title: 'Hold = Stronger Signal', desc: 'The longer you hold, the more your conviction counts. Early believers earn most.' },
+                  { n: '03', title: 'Earn from the Pool', desc: `Rewards come from a shared pool. Leave early = ${marketParams ? formatBps(marketParams.earlyWithdrawPenaltyBps) : '5%'} penalty. Stay the full term = full principal back.` },
                 ].map((step, i) => (
                   <div key={step.n} className={`flex gap-3 py-3 ${i < 2 ? 'border-b border-theme-border/40' : ''}`}>
                     <span className="text-[10px] font-bold text-theme-primary min-w-[18px]">{step.n}</span>
