@@ -1,18 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getActivityEntries, getCastMapping } from '~/lib/kv';
+import { getActivityEntries, getCastMapping, getCommentCastHashes, type ActivityItem } from '~/lib/kv';
 import { getNeynarClient } from '~/lib/neynar';
-
-interface ActivityItem {
-  type: 'commit' | 'comment';
-  fid: number;
-  username: string;
-  pfpUrl: string;
-  timestamp: number;
-  side?: 'support' | 'challenge';
-  amount?: string;
-  text?: string;
-  castHash?: string;
-}
 
 export async function GET(request: NextRequest) {
   const postId = request.nextUrl.searchParams.get('postId');
@@ -24,10 +12,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Fetch commit activities and cast mapping in parallel (no Neynar dependency)
-    const [commitEntries, castMapping] = await Promise.all([
+    // Fetch commit activities, cast mapping, and known comment hashes in parallel
+    const [commitEntries, castMapping, knownCastHashes] = await Promise.all([
       getActivityEntries(postId, limit),
       getCastMapping(postId),
+      getCommentCastHashes(postId),
     ]);
 
     let client: ReturnType<typeof getNeynarClient> | null = null;
@@ -70,6 +59,7 @@ export async function GET(request: NextRequest) {
             timestamp: entry.timestamp,
             side: entry.side,
             amount: entry.amount,
+            text: entry.comment,
           };
         });
       })(),
@@ -112,7 +102,13 @@ export async function GET(request: NextRequest) {
     ]);
 
     const commits = commitsResult.status === 'fulfilled' ? commitsResult.value : [];
-    const comments = commentsResult.status === 'fulfilled' ? commentsResult.value : [];
+    const allComments = commentsResult.status === 'fulfilled' ? commentsResult.value : [];
+
+    // Deduplicate: filter out Farcaster replies that were published via
+    // the comment flow (their hash is registered in a dedicated Redis set)
+    const comments = allComments.filter(
+      (c) => !c.castHash || !knownCastHashes.has(c.castHash)
+    );
 
     // Merge, sort by timestamp descending, trim to limit
     const activities = [...commits, ...comments]
