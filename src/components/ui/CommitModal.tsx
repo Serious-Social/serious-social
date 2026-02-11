@@ -389,15 +389,23 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
               </div>
 
               {approveError && (
-                <button
-                  onClick={() => {
-                    resetApprove();
-                    approve();
-                  }}
-                  className="w-full py-3 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
-                >
-                  Try Again
-                </button>
+                <div className="space-y-3">
+                  <p className="text-sm text-red-400 break-words">{approveError.message}</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { resetApprove(); setStep('comment'); }}
+                      className="flex-1 py-3 bg-theme-surface border border-theme-border hover:bg-theme-border rounded-xl text-theme-text font-medium transition-colors"
+                    >
+                      Go Back
+                    </button>
+                    <button
+                      onClick={() => { resetApprove(); approve(); }}
+                      className="flex-1 py-3 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           )}
@@ -445,12 +453,32 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
                 </p>
               </div>
 
-              {!isCommitting && !isCommitConfirming && (
+              {!isCommitting && !isCommitConfirming && commitError && (
+                <div className="space-y-3">
+                  <p className="text-sm text-red-400 break-words">{commitError.message}</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { resetCommit(); setStep('comment'); }}
+                      className="flex-1 py-3 bg-theme-surface border border-theme-border hover:bg-theme-border rounded-xl text-theme-text font-medium transition-colors"
+                    >
+                      Go Back
+                    </button>
+                    <button
+                      onClick={() => { resetCommit(); handleCommit(); }}
+                      className="flex-1 py-3 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {!isCommitting && !isCommitConfirming && !commitError && (
                 <button
-                  onClick={commitError ? () => { resetCommit(); handleCommit(); } : handleCommit}
+                  onClick={handleCommit}
                   className="w-full py-3 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
                 >
-                  {commitError ? 'Try Again' : `Commit $${formatUSDC(amountBigInt)}`}
+                  Commit ${formatUSDC(amountBigInt)}
                 </button>
               )}
             </div>
