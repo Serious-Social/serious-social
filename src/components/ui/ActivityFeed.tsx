@@ -2,18 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import sdk from '@farcaster/miniapp-sdk';
-
-interface ActivityItem {
-  type: 'commit' | 'comment';
-  fid: number;
-  username: string;
-  pfpUrl: string;
-  timestamp: number;
-  side?: 'support' | 'challenge';
-  amount?: string;
-  text?: string;
-  castHash?: string;
-}
+import type { ActivityItem } from '~/lib/kv';
 
 interface ActivityFeedProps {
   postId: string;
@@ -94,18 +83,25 @@ export function ActivityFeed({ postId, bare = false }: ActivityFeedProps) {
           </button>
           <div className="flex-1 min-w-0">
             {item.type === 'commit' ? (
-              <p className="text-sm text-theme-text">
-                <button
-                  onClick={() => handleViewProfile(item.fid)}
-                  className="font-medium hover:underline"
-                >
-                  @{item.username}
-                </button>
-                {' '}
-                <span className="text-theme-text-muted">
-                  {item.side === 'support' ? 'supported' : 'challenged'} with ${item.amount}
-                </span>
-              </p>
+              <div>
+                <p className="text-sm text-theme-text">
+                  <button
+                    onClick={() => handleViewProfile(item.fid)}
+                    className="font-medium hover:underline"
+                  >
+                    @{item.username}
+                  </button>
+                  {' '}
+                  <span className="text-theme-text-muted">
+                    {item.side === 'support' ? 'supported' : 'challenged'} with ${item.amount}
+                  </span>
+                </p>
+                {item.text && (
+                  <p className="text-xs text-theme-text-muted italic mt-0.5 line-clamp-2 break-words">
+                    &ldquo;{item.text}&rdquo;
+                  </p>
+                )}
+              </div>
             ) : (
               <div>
                 <p className="text-sm text-theme-text">
@@ -117,8 +113,8 @@ export function ActivityFeed({ postId, bare = false }: ActivityFeedProps) {
                   </button>
                 </p>
                 {item.text && (
-                  <p className="text-xs text-theme-text-muted italic mt-0.5 line-clamp-2">
-                    {item.text.length > 120 ? `${item.text.slice(0, 120)}...` : item.text}
+                  <p className="text-xs text-theme-text-muted italic mt-0.5 line-clamp-2 break-words">
+                    {item.text}
                   </p>
                 )}
               </div>
