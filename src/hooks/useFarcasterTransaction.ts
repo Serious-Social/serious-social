@@ -1,8 +1,8 @@
 /**
- * Hook for sending transactions using the Farcaster miniapp SDK's ethProvider directly.
- * This bypasses the wagmi connector which has compatibility issues.
+ * Hook for sending transactions using the Farcaster miniapp SDK's ethereum provider.
+ * Uses sdk.wallet.getEthereumProvider() (async, recommended) with chain detection and timeout.
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { sdk } from '@farcaster/miniapp-sdk';
 import { encodeFunctionData, createPublicClient, http, type Hash } from 'viem';
 import { baseSepolia } from 'viem/chains';
@@ -15,6 +15,9 @@ import {
 } from '~/lib/contracts';
 
 const chainId = DEFAULT_CHAIN_ID;
+
+// Timeout for wallet prompt (30 seconds)
+const WALLET_PROMPT_TIMEOUT = 30_000;
 
 // Public client for reading transaction receipts
 const publicClient = createPublicClient({
@@ -41,8 +44,20 @@ export function useFarcasterTransaction() {
     isSuccess: false,
     error: null,
   });
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   const reset = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
     setState({
       hash: null,
       isPending: false,
@@ -61,34 +76,56 @@ export function useFarcasterTransaction() {
     setState(prev => ({ ...prev, isPending: true, error: null }));
 
     try {
-      // Get the ethereum provider from the SDK
-      console.log('[useFarcasterTransaction] Getting ethProvider from SDK...');
-      console.log('[useFarcasterTransaction] sdk.wallet:', sdk.wallet);
-      const provider = sdk.wallet.ethProvider;
-
-      console.log('[useFarcasterTransaction] Provider:', provider);
-      console.log('[useFarcasterTransaction] Provider type:', typeof provider);
+      // Use async getEthereumProvider() which checks capabilities first
+      console.log('[useFarcasterTransaction] Getting ethereum provider...');
+      const provider = await sdk.wallet.getEthereumProvider();
 
       if (!provider) {
-        throw new Error('Ethereum provider not available - sdk.wallet.ethProvider is null/undefined');
+        throw new Error('Wallet not available. Please open this app in Farcaster.');
+      }
+
+      // Check current chain and attempt switch if needed
+      try {
+        const currentChainHex = await provider.request({ method: 'eth_chainId' }) as string;
+        const currentChainId = parseInt(currentChainHex, 16);
+        console.log('[useFarcasterTransaction] Current chain:', currentChainId, 'Target:', DEFAULT_CHAIN_ID);
+
+        if (currentChainId !== DEFAULT_CHAIN_ID) {
+          console.log('[useFarcasterTransaction] Switching chain...');
+          await provider.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: `0x${DEFAULT_CHAIN_ID.toString(16)}` }],
+          });
+        }
+      } catch (switchError) {
+        console.warn('[useFarcasterTransaction] Chain switch failed:', switchError);
+        throw new Error(
+          `Your wallet does not support Base Sepolia (chain ${DEFAULT_CHAIN_ID}). ` +
+          `Transactions require a wallet that supports this network.`
+        );
       }
 
       // Get accounts
-      console.log('[useFarcasterTransaction] Requesting eth_accounts...');
-      const accounts = await provider.request({ method: 'eth_accounts' }) as string[];
-      console.log('[useFarcasterTransaction] Accounts:', accounts);
+      let accounts = await provider.request({ method: 'eth_accounts' }) as string[];
 
       if (!accounts || accounts.length === 0) {
-        // Request accounts if not connected
-        console.log('[useFarcasterTransaction] No accounts, requesting eth_requestAccounts...');
-        const requestedAccounts = await provider.request({ method: 'eth_requestAccounts' }) as string[];
-        console.log('[useFarcasterTransaction] Requested accounts:', requestedAccounts);
-        if (!requestedAccounts || requestedAccounts.length === 0) {
-          throw new Error('No accounts available after eth_requestAccounts');
+        accounts = await provider.request({ method: 'eth_requestAccounts' }) as string[];
+        if (!accounts || accounts.length === 0) {
+          throw new Error('No accounts available. Please connect your wallet.');
         }
       }
 
-      const from = (await provider.request({ method: 'eth_accounts' }) as string[])[0];
+      const from = accounts[0] as `0x${string}`;
+
+      // Build clean tx params (no undefined values - some mobile providers choke on them)
+      const txParams: Record<string, string> = {
+        from,
+        to: params.to,
+        data: params.data,
+      };
+      if (params.value) {
+        txParams.value = `0x${params.value.toString(16)}`;
+      }
 
       console.log('[useFarcasterTransaction] Sending transaction:', {
         from,
@@ -96,20 +133,27 @@ export function useFarcasterTransaction() {
         data: params.data.slice(0, 20) + '...',
       });
 
-      // Send the transaction
-      console.log('[useFarcasterTransaction] Calling eth_sendTransaction...');
-      const txParams = {
-        from: from as `0x${string}`,
-        to: params.to,
-        data: params.data,
-        value: params.value ? `0x${params.value.toString(16)}` as `0x${string}` : undefined,
-      };
-      console.log('[useFarcasterTransaction] TX params:', txParams);
+      // Send transaction with timeout to prevent indefinite hang
+      const hash = await Promise.race([
+        provider.request({
+          method: 'eth_sendTransaction',
+          params: [txParams],
+        }),
+        new Promise<never>((_, reject) => {
+          timeoutRef.current = setTimeout(() => {
+            reject(new Error(
+              'Transaction timed out waiting for wallet approval. ' +
+              'Your wallet may not support this network. Please try again.'
+            ));
+          }, WALLET_PROMPT_TIMEOUT);
+        }),
+      ]) as Hash;
 
-      const hash = await provider.request({
-        method: 'eth_sendTransaction',
-        params: [txParams],
-      }) as Hash;
+      // Clear timeout on success
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
 
       console.log('[useFarcasterTransaction] Transaction hash received:', hash);
 
@@ -124,6 +168,10 @@ export function useFarcasterTransaction() {
 
       return hash;
     } catch (error) {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
       console.error('[useFarcasterTransaction] Error:', error);
       setState(prev => ({
         ...prev,
