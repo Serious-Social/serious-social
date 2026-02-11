@@ -117,7 +117,7 @@ async function startDev() {
   const appUrl = process.env.NEXT_PUBLIC_URL || miniAppUrl;
   const authUrl = process.env.NEXTAUTH_URL || miniAppUrl;
 
-  nextDev = spawn(nextBin, ['dev', '-p', port.toString()], {
+  nextDev = spawn(nextBin, ['dev', '--turbopack', '-p', port.toString()], {
     stdio: 'inherit',
     env: { ...process.env, NEXT_PUBLIC_URL: appUrl, NEXTAUTH_URL: authUrl },
     cwd: projectRoot,
