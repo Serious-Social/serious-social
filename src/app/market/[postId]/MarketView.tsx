@@ -268,7 +268,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
         )}
 
         {/* Belief Signal — PRIMARY section */}
-        <section className="bg-theme-surface border border-theme-border rounded-xl p-4">
+        <section className="bg-theme-surface rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-medium text-theme-text-muted">Belief Signal</h2>
             {state && getMarketStatus(state) !== 'no_market' && (
@@ -325,7 +325,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           {/* Signal tab */}
           {activeTab === 0 && (
             <div className="space-y-3">
-              <section className="bg-theme-surface border border-theme-border rounded-xl p-4">
+              <section className="bg-theme-surface rounded-xl p-4">
                 <BeliefCurve
                   state={state ?? null}
                   section="secondary"
@@ -379,7 +379,8 @@ export function MarketView({ postId, intent }: MarketViewProps) {
         <section>
           <ShareButton
             buttonText="Share this market"
-            className="w-full py-3 rounded-xl font-medium transition-colors bg-theme-primary/15 border border-theme-primary/30 text-white hover:bg-theme-primary/25"
+            variant="outline"
+            className="w-full py-3 rounded-xl font-medium bg-theme-primary/20 border-theme-primary/50 text-theme-text hover:bg-theme-primary/30"
             cast={{
               text: castContent
                 ? `"${castContent.text.slice(0, 100)}${castContent.text.length > 100 ? '...' : ''}"\n\nDo you believe this? Put your money where your mouth is.`
@@ -392,10 +393,11 @@ export function MarketView({ postId, intent }: MarketViewProps) {
         {/* Spacer for sticky bottom bar */}
         <div className="h-20" />
 
-        {/* Market info */}
-        <div className="text-center text-xs text-theme-text-muted/70 space-y-1 pt-4 border-t border-theme-border">
-          <p>Market: {marketAddress?.slice(0, 10)}...{marketAddress?.slice(-8)}</p>
-          <p>Post ID: {postId.slice(0, 10)}...{postId.slice(-8)}</p>
+        {/* Footer */}
+        <div className="text-center pt-4 border-t border-theme-border">
+          <span className="font-mono text-xs text-theme-positive/80 tracking-wider">
+            patience_is_power<span className="inline-block w-2 h-3.5 bg-theme-positive/80 ml-0.5 align-middle cursor-blink" />
+          </span>
         </div>
       </div>
 
