@@ -162,6 +162,9 @@ export function BeliefCurve({ state, size = 'full', section = 'all', onInfoClick
               style={{ width: `${beliefPercent}%` }}
             />
           </div>
+          <p className="text-[9px] text-theme-text-muted/60 text-center tracking-wide">
+            weighted by time × capital
+          </p>
         </div>
 
         {/* Participant avatars + count */}
