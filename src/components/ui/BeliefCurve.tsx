@@ -100,7 +100,7 @@ function CompactStats({ state }: { state: MarketState }) {
 
   const items = [
     { label: "Committed", value: `$${formatUSDC(totalPrincipal)}` },
-    { label: "Pool", value: `$${formatUSDC(state.srpBalance)}` },
+    { label: "Reward Pool", value: `$${formatUSDC(state.srpBalance)}` },
     { label: "Avg Hold", value: formatDuration(avgHoldTime) },
   ];
 
@@ -211,8 +211,10 @@ export function BeliefCurve({
             <span>Challenge</span>
           </div>
           <SegmentedBar percent={beliefPercent} segments={20} secondaryColor="negative" />
-          <p className="text-[9px] text-theme-text-muted/60 text-center tracking-wide">
-            weighted by time × capital
+          <p className="text-[9px] text-theme-text-muted/60 text-center tracking-wide flex items-center justify-between">
+            <span>← older stakes</span>
+            <span className="text-theme-text-muted/40">weighted by time × capital</span>
+            <span>newer stakes →</span>
           </p>
         </div>
 
@@ -268,71 +270,68 @@ export function BeliefCurve({
     );
   }
 
-  // SECONDARY section: detailed breakdown for Signal tab
+  // SECONDARY section: detailed breakdown for Breakdown tab
   if (section === "secondary") {
     return (
-      <div className="space-y-4">
-        {/* Capital & Time conviction bars */}
+      <div className="space-y-3">
+        {/* Side-by-side comparison */}
         {totalPrincipal > 0n && (
-          <div className="space-y-3">
-            {/* Capital distribution */}
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-2">
-                Capital Distribution
+          <div className="flex gap-[1px] bg-theme-border rounded-lg overflow-hidden">
+            {/* Support column */}
+            <div className="flex-1 bg-theme-surface p-3 space-y-2">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-theme-positive">
+                Support
               </div>
-              {[
-                {
-                  label: "Capital (Support)",
-                  value: `$${formatUSDC(state.supportPrincipal)}`,
-                  pct: capitalSupportPercent,
-                  color: "positive" as const,
-                  secondary: "positive" as const,
-                },
-                {
-                  label: "Capital (Challenge)",
-                  value: `$${formatUSDC(state.opposePrincipal)}`,
-                  pct: 100 - capitalSupportPercent,
-                  color: "negative" as const,
-                  secondary: "negative" as const,
-                },
-              ].map((c) => (
-                <div key={c.label} className="mb-2">
-                  <div className="flex justify-between text-xs text-theme-text-muted mb-1">
-                    <span>{c.label}</span>
-                    <span className="font-semibold">{c.value}</span>
-                  </div>
-                  <SegmentedBar percent={c.pct} segments={20} color={c.color} secondaryColor={c.secondary} />
+              <div>
+                <div className="text-lg font-bold text-theme-text">
+                  ${formatUSDC(state.supportPrincipal)}
                 </div>
-              ))}
+                <div className="text-[8px] font-semibold text-theme-text-muted uppercase tracking-wide">
+                  Capital
+                </div>
+              </div>
+              <div>
+                <div className="text-lg font-bold text-theme-text">
+                  {formatDuration(supportTime)}
+                </div>
+                <div className="text-[8px] font-semibold text-theme-text-muted uppercase tracking-wide">
+                  Avg Hold
+                </div>
+              </div>
+              <SegmentedBar percent={capitalSupportPercent} segments={10} color="positive" secondaryColor="positive" />
             </div>
-
-            {/* Hold time stats - 2 cell row */}
-            <div className="flex gap-[1px] bg-theme-border rounded-lg overflow-hidden">
-              {[
-                {
-                  label: "Avg Hold (Support)",
-                  value: formatDuration(supportTime),
-                },
-                {
-                  label: "Avg Hold (Challenge)",
-                  value: formatDuration(opposeTime),
-                },
-              ].map((h) => (
-                <div
-                  key={h.label}
-                  className="flex-1 bg-theme-surface py-2 px-2.5"
-                >
-                  <div className="text-sm font-bold text-theme-text">
-                    {h.value}
-                  </div>
-                  <div className="text-[8px] font-semibold text-theme-text-muted uppercase tracking-wide mt-0.5">
-                    {h.label}
-                  </div>
+            {/* Challenge column */}
+            <div className="flex-1 bg-theme-surface p-3 space-y-2">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-theme-negative">
+                Challenge
+              </div>
+              <div>
+                <div className="text-lg font-bold text-theme-text">
+                  ${formatUSDC(state.opposePrincipal)}
                 </div>
-              ))}
+                <div className="text-[8px] font-semibold text-theme-text-muted uppercase tracking-wide">
+                  Capital
+                </div>
+              </div>
+              <div>
+                <div className="text-lg font-bold text-theme-text">
+                  {formatDuration(opposeTime)}
+                </div>
+                <div className="text-[8px] font-semibold text-theme-text-muted uppercase tracking-wide">
+                  Avg Hold
+                </div>
+              </div>
+              <SegmentedBar percent={100 - capitalSupportPercent} segments={10} color="negative" secondaryColor="negative" />
             </div>
           </div>
         )}
+
+        {/* Formula explainer */}
+        <div className="bg-theme-surface rounded-lg px-4 py-2.5 text-center">
+          <code className="text-[10px] text-theme-text-muted/70 tracking-wide">
+            conviction = Σ(capital × time_held)
+          </code>
+        </div>
       </div>
     );
   }
