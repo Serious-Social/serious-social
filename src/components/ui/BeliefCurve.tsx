@@ -20,6 +20,7 @@ export interface ProfileInfo {
 interface BeliefCurveProps {
   state: MarketState | null;
   size?: 'compact' | 'full';
+  section?: 'primary' | 'secondary' | 'all';
   onInfoClick?: () => void;
   beliefChange24h?: number | null;
   participants?: { support: ProfileInfo[]; challenge: ProfileInfo[] };
@@ -56,7 +57,36 @@ function SegmentedBar({ percent, segments = 20 }: { percent: number; segments?: 
   );
 }
 
-export function BeliefCurve({ state, size = 'full', onInfoClick, beliefChange24h, participants, earlyWithdrawPenaltyPercent }: BeliefCurveProps) {
+/** Compact 3-cell stats row for primary section */
+function CompactStats({ state }: { state: MarketState }) {
+  const totalPrincipal = state.supportPrincipal + state.opposePrincipal;
+  const supportTime = state.supportPrincipal > 0n
+    ? Number(state.supportWeight / state.supportPrincipal)
+    : 0;
+  const opposeTime = state.opposePrincipal > 0n
+    ? Number(state.opposeWeight / state.opposePrincipal)
+    : 0;
+  const avgHoldTime = Math.round((supportTime + opposeTime) / 2);
+
+  const items = [
+    { label: 'Committed', value: `$${formatUSDC(totalPrincipal)}` },
+    { label: 'Pool', value: `$${formatUSDC(state.srpBalance)}` },
+    { label: 'Avg Hold', value: formatDuration(avgHoldTime) },
+  ];
+
+  return (
+    <div className="flex gap-[1px] bg-theme-border rounded-lg overflow-hidden">
+      {items.map((item) => (
+        <div key={item.label} className="flex-1 bg-theme-surface py-2 px-1 text-center">
+          <div className="text-xs font-bold text-theme-text">{item.value}</div>
+          <div className="text-[8px] font-semibold text-theme-text-muted uppercase tracking-wide mt-0.5">{item.label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function BeliefCurve({ state, size = 'full', section = 'all', onInfoClick, beliefChange24h, participants, earlyWithdrawPenaltyPercent }: BeliefCurveProps) {
   if (!state) {
     return (
       <div className="text-center text-theme-text-muted py-8">
@@ -103,6 +133,125 @@ export function BeliefCurve({ state, size = 'full', onInfoClick, beliefChange24h
     );
   }
 
+  // PRIMARY section: above-the-fold essentials
+  if (section === 'primary') {
+    return (
+      <div className="space-y-3">
+        {/* Net Belief Signal bar */}
+        <div className="space-y-2">
+          <div className="flex justify-between items-baseline">
+            <span className="text-xl font-bold text-theme-positive">{beliefPercent.toFixed(0)}%</span>
+            {beliefChange24h != null && beliefChange24h !== 0 && (
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
+                beliefChange24h > 0
+                  ? 'text-theme-positive bg-theme-positive/10 border border-theme-positive/25'
+                  : 'text-theme-negative bg-theme-negative/10 border border-theme-negative/25'
+              }`}>
+                {beliefChange24h > 0 ? '+' : ''}{beliefChange24h}% 24h
+              </span>
+            )}
+            <span className="text-xl font-bold text-theme-negative">{opposePercent.toFixed(0)}%</span>
+          </div>
+          <div className="flex justify-between text-[10px] text-theme-text-muted uppercase tracking-wide font-medium">
+            <span>Support</span>
+            <span>Challenge</span>
+          </div>
+          <div className="h-1.5 rounded-full overflow-hidden bg-theme-negative/10 flex">
+            <div
+              className="bg-gradient-primary rounded-full transition-[width] duration-700"
+              style={{ width: `${beliefPercent}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Participant avatars + count */}
+        {participants && (participants.support.length > 0 || participants.challenge.length > 0) && (
+          <div className="flex items-center gap-1.5 mt-2">
+            <div className="flex items-center">
+              {participants.support.slice(0, 3).concat(participants.challenge.slice(0, 1)).map((p, i) => (
+                <img
+                  key={p.fid}
+                  src={p.pfpUrl}
+                  alt={p.username}
+                  className="w-6 h-6 rounded-full border-2 border-theme-surface object-cover"
+                  style={{ marginLeft: i > 0 ? '-0.35rem' : undefined }}
+                />
+              ))}
+            </div>
+            <span className="text-xs text-theme-text-muted">
+              {participants.support.length + participants.challenge.length} {participants.support.length + participants.challenge.length === 1 ? 'participant' : 'participants'}
+            </span>
+          </div>
+        )}
+
+        {/* Compact stats row */}
+        {totalPrincipal > 0n && <CompactStats state={state} />}
+
+        {/* "how does this work?" button */}
+        {onInfoClick && (
+          <button
+            onClick={onInfoClick}
+            className="w-full flex items-center justify-center gap-1 py-2 rounded-md bg-theme-primary/10 border border-theme-primary/25 text-theme-primary text-xs font-semibold transition-colors hover:bg-theme-primary/15"
+          >
+            how does this work? →
+          </button>
+        )}
+
+        {/* Unchallenged note */}
+        {status === 'unchallenged' && (
+          <p className="text-sm text-theme-text-muted text-center italic">
+            No counter-signal yet
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // SECONDARY section: detailed breakdown for Signal tab
+  if (section === 'secondary') {
+    return (
+      <div className="space-y-4">
+        {/* Capital & Time conviction bars */}
+        {totalPrincipal > 0n && (
+          <div className="space-y-3">
+            {/* Capital distribution */}
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-theme-text-muted mb-2">Capital Distribution</div>
+              {[
+                { label: 'Capital (Support)', value: `$${formatUSDC(state.supportPrincipal)}`, pct: capitalSupportPercent, color: 'bg-theme-positive' },
+                { label: 'Capital (Challenge)', value: `$${formatUSDC(state.opposePrincipal)}`, pct: 100 - capitalSupportPercent, color: 'bg-theme-negative' },
+              ].map((c) => (
+                <div key={c.label} className="mb-2">
+                  <div className="flex justify-between text-xs text-theme-text-muted mb-1">
+                    <span>{c.label}</span>
+                    <span className="font-semibold">{c.value}</span>
+                  </div>
+                  <div className="h-[3px] bg-theme-border rounded-sm overflow-hidden">
+                    <div className={`h-full rounded-sm ${c.color} opacity-65`} style={{ width: `${c.pct}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Hold time stats - 2 cell row */}
+            <div className="flex gap-[1px] bg-theme-border rounded-lg overflow-hidden">
+              {[
+                { label: 'Avg Hold (Support)', value: formatDuration(supportTime) },
+                { label: 'Avg Hold (Challenge)', value: formatDuration(opposeTime) },
+              ].map((h) => (
+                <div key={h.label} className="flex-1 bg-theme-surface py-2 px-2.5">
+                  <div className="text-sm font-bold text-theme-text">{h.value}</div>
+                  <div className="text-[8px] font-semibold text-theme-text-muted uppercase tracking-wide mt-0.5">{h.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ALL section: existing full rendering (backward compatible)
   return (
     <div className="space-y-4">
       {/* Main belief bar - PRIMARY METRIC (shown first per UX spec) */}
