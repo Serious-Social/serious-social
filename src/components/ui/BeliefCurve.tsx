@@ -211,10 +211,8 @@ export function BeliefCurve({
             <span>Challenge</span>
           </div>
           <SegmentedBar percent={beliefPercent} segments={20} secondaryColor="negative" />
-          <p className="text-[9px] text-theme-text-muted/60 text-center tracking-wide flex items-center justify-between">
-            <span>← older stakes</span>
-            <span className="text-theme-text-muted/40">weighted by time × capital</span>
-            <span>newer stakes →</span>
+          <p className="text-[9px] text-theme-text-muted/60 text-center tracking-wide">
+            weighted by time × capital
           </p>
         </div>
 
