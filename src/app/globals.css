@@ -196,9 +196,49 @@ body {
     50% { opacity: 0.7; }
   }
 
+  /* Tab content fade-up animation */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade-up {
+    animation: fadeUp 0.18s ease-out both;
+  }
+
+  /* Stagger delays for list items */
+  .stagger-1 { animation-delay: 0.02s; }
+  .stagger-2 { animation-delay: 0.04s; }
+  .stagger-3 { animation-delay: 0.06s; }
+  .stagger-4 { animation-delay: 0.08s; }
+  .stagger-5 { animation-delay: 0.10s; }
+
+  /* Bottom sheet animations */
+  @keyframes sheetUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  @keyframes overlayIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .sheet-backdrop {
+    animation: overlayIn 0.2s ease-out;
+  }
+
+  .sheet-panel {
+    animation: sheetUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
   /* Respect reduced motion preference */
   @media (prefers-reduced-motion: reduce) {
-    .badge-pulse {
+    .badge-pulse,
+    .fade-up,
+    .sheet-backdrop,
+    .sheet-panel,
+    [class*="stagger-"] {
       animation: none;
     }
   }
