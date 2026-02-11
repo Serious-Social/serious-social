@@ -22,9 +22,10 @@ interface ShareButtonProps {
   cast: CastConfig;
   className?: string;
   isLoading?: boolean;
+  variant?: 'primary' | 'secondary' | 'outline';
 }
 
-export function ShareButton({ buttonText, cast, className = '', isLoading = false }: ShareButtonProps) {
+export function ShareButton({ buttonText, cast, className = '', isLoading = false, variant }: ShareButtonProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [bestFriends, setBestFriends] = useState<{ fid: number; username: string; }[] | null>(null);
   const [isLoadingBestFriends, setIsLoadingBestFriends] = useState(false);
@@ -111,6 +112,7 @@ export function ShareButton({ buttonText, cast, className = '', isLoading = fals
     <Button
       onClick={handleShare}
       className={className}
+      variant={variant}
       isLoading={isLoading || isProcessing}
       disabled={isLoadingBestFriends}
     >
