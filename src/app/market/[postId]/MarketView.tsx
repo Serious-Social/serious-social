@@ -63,7 +63,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
   // Swipe tracking
   const touchRef = useRef<{ x: number; y: number } | null>(null);
 
-  const tabs = ['Signal', 'Activity', 'Position'];
+  const tabs = ['Breakdown', 'Activity', 'My Position'];
 
   const switchTab = (i: number) => {
     setActiveTab(i);
@@ -268,7 +268,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
         )}
 
         {/* Belief Signal — PRIMARY section */}
-        <section className="bg-theme-surface border border-theme-border rounded-xl p-4">
+        <section className="bg-theme-surface rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-medium text-theme-text-muted">Belief Signal</h2>
             {state && getMarketStatus(state) !== 'no_market' && (
@@ -293,7 +293,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
               role="tab"
               aria-selected={activeTab === i}
               onClick={() => switchTab(i)}
-              className={`flex-1 py-2.5 text-xs font-medium transition-colors relative flex items-center justify-center gap-1 ${
+              className={`flex-1 py-3 text-xs font-medium transition-colors relative flex items-center justify-center gap-1 ${
                 activeTab === i
                   ? 'text-theme-text font-bold'
                   : 'text-theme-text-muted'
@@ -325,7 +325,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           {/* Signal tab */}
           {activeTab === 0 && (
             <div className="space-y-3">
-              <section className="bg-theme-surface border border-theme-border rounded-xl p-4">
+              <section className="bg-theme-surface rounded-xl p-4">
                 <BeliefCurve
                   state={state ?? null}
                   section="secondary"
@@ -379,7 +379,8 @@ export function MarketView({ postId, intent }: MarketViewProps) {
         <section>
           <ShareButton
             buttonText="Share this market"
-            className="w-full py-3 rounded-xl font-medium transition-colors bg-theme-surface border border-theme-border text-theme-text-muted hover:text-theme-text hover:bg-theme-border"
+            variant="outline"
+            className="w-full py-3 rounded-xl font-medium bg-theme-primary/20 border-theme-primary/50 text-theme-text hover:bg-theme-primary/30"
             cast={{
               text: castContent
                 ? `"${castContent.text.slice(0, 100)}${castContent.text.length > 100 ? '...' : ''}"\n\nDo you believe this? Put your money where your mouth is.`
@@ -392,10 +393,11 @@ export function MarketView({ postId, intent }: MarketViewProps) {
         {/* Spacer for sticky bottom bar */}
         <div className="h-20" />
 
-        {/* Market info */}
-        <div className="text-center text-xs text-theme-text-muted/70 space-y-1 pt-4 border-t border-theme-border">
-          <p>Market: {marketAddress?.slice(0, 10)}...{marketAddress?.slice(-8)}</p>
-          <p>Post ID: {postId.slice(0, 10)}...{postId.slice(-8)}</p>
+        {/* Footer */}
+        <div className="text-center pt-4 border-t border-theme-border">
+          <span className="font-mono text-xs text-theme-positive/80 tracking-wider">
+            patience_is_power<span className="inline-block w-2 h-3.5 bg-theme-positive/80 ml-0.5 align-middle cursor-blink" />
+          </span>
         </div>
       </div>
 
@@ -406,13 +408,13 @@ export function MarketView({ postId, intent }: MarketViewProps) {
             onClick={() => handleOpenModal(Side.Support)}
             className="flex-1 py-4 rounded-xl font-medium transition-all bg-theme-surface border border-theme-border text-theme-text hover:bg-theme-border active:scale-[0.98]"
           >
-            Support
+            SUPPORT
           </button>
           <button
             onClick={() => handleOpenModal(Side.Oppose)}
             className="flex-1 py-4 rounded-xl font-medium transition-all bg-gradient-primary text-white hover:opacity-90 active:scale-[0.98]"
           >
-            Challenge
+            CHALLENGE
           </button>
         </div>
       </div>
@@ -429,9 +431,9 @@ export function MarketView({ postId, intent }: MarketViewProps) {
               <h2 className="text-sm font-bold text-theme-text mb-3">How Belief Markets Work</h2>
               <div className="space-y-3 pb-6">
                 {[
-                  { n: '01', title: 'Commit Capital', desc: `Support or Challenge a claim by committing USDC. Your capital is committed for ${marketParams ? formatLockPeriod(marketParams.lockPeriod) : '30 days'}.` },
-                  { n: '02', title: 'Time-Weighted Signal', desc: 'The longer your capital stays committed, the more it contributes to the belief signal. Earlier and longer commitments earn more rewards.' },
-                  { n: '03', title: 'Earn Rewards', desc: `Rewards come from a shared pool, not other participants. Early withdrawal incurs a ${marketParams ? formatBps(marketParams.earlyWithdrawPenaltyBps) : '5%'} penalty. Your principal is returned after the commitment period.` },
+                  { n: '01', title: 'Pick a Side', desc: `Commit USDC to Support or Challenge. Locked for ${marketParams ? formatLockPeriod(marketParams.lockPeriod) : '30 days'}.` },
+                  { n: '02', title: 'Hold = Stronger Signal', desc: 'The longer you hold, the more your conviction counts. Early believers earn most.' },
+                  { n: '03', title: 'Earn from the Pool', desc: `Rewards come from a shared pool. Leave early = ${marketParams ? formatBps(marketParams.earlyWithdrawPenaltyBps) : '5%'} penalty. Stay the full term = full principal back.` },
                 ].map((step, i) => (
                   <div key={step.n} className={`flex gap-3 py-3 ${i < 2 ? 'border-b border-theme-border/40' : ''}`}>
                     <span className="text-[10px] font-bold text-theme-primary min-w-[18px]">{step.n}</span>

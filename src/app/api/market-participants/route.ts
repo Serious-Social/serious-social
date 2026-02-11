@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { postId, fid, side, amount } = await request.json();
+    const { postId, fid, side, amount, comment, commentCastHash } = await request.json();
 
     if (!postId || !fid || !side) {
       return NextResponse.json(
@@ -79,6 +79,8 @@ export async function POST(request: NextRequest) {
       side,
       amount: amount || '0',
       timestamp: Date.now(),
+      comment: comment || undefined,
+      commentCastHash: commentCastHash || undefined,
     });
 
     return NextResponse.json({ success: true });

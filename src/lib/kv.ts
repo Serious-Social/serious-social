@@ -271,6 +271,21 @@ export interface ActivityEntry {
   side: 'support' | 'challenge';
   amount: string;      // formatted USDC, e.g. "25.00"
   timestamp: number;   // Unix ms
+  comment?: string;         // user's comment text
+  commentCastHash?: string; // hash of the published Farcaster reply (for dedup)
+}
+
+/** API-facing activity item (enriched with user profile data). */
+export interface ActivityItem {
+  type: 'commit' | 'comment';
+  fid: number;
+  username: string;
+  pfpUrl: string;
+  timestamp: number;
+  side?: 'support' | 'challenge';
+  amount?: string;
+  text?: string;
+  castHash?: string;
 }
 
 const MAX_ACTIVITY_ENTRIES = 50;
@@ -282,11 +297,33 @@ function getActivityKey(postId: string): string {
   return `${APP_NAME}:activity:${postId}`;
 }
 
+const ACTIVITY_DEDUP_TTL = 30; // seconds — window to reject duplicate appends
+
+function getActivityDedupKey(postId: string, fid: number, side: string): string {
+  return `${APP_NAME}:activity_dedup:${postId}:${fid}:${side}`;
+}
+
+// In-memory fallback for activity dedup
+const activityDedupStore = new Map<string, number>();
+
 export async function addActivityEntry(
   postId: string,
   entry: ActivityEntry
 ): Promise<void> {
   const key = getActivityKey(postId);
+  const dedupKey = getActivityDedupKey(postId, entry.fid, entry.side);
+
+  // Idempotency guard: skip if same fid+side was recorded recently
+  if (redis) {
+    const wasSet = await redis.set(dedupKey, 1, { ex: ACTIVITY_DEDUP_TTL, nx: true });
+    if (!wasSet) return;
+  } else {
+    const now = Date.now();
+    const expiresAt = activityDedupStore.get(dedupKey);
+    if (expiresAt && expiresAt > now) return;
+    activityDedupStore.set(dedupKey, now + ACTIVITY_DEDUP_TTL * 1000);
+  }
+
   const serialized = JSON.stringify(entry);
 
   if (redis) {
@@ -333,6 +370,102 @@ export async function getActivityEntries(
   return entries;
 }
 
+/*//////////////////////////////////////////////////////////////
+                    COMMENT CAST HASHES
+//////////////////////////////////////////////////////////////*/
+
+// In-memory fallback for comment cast hashes
+const commentCastHashStore = new Map<string, Set<string>>();
+
+function getCommentCastHashesKey(postId: string): string {
+  return `${APP_NAME}:comment_cast_hashes:${postId}`;
+}
+
+/**
+ * Register a comment cast hash for dedup.
+ * Called by publish-comment after successful Neynar publish.
+ */
+export async function registerCommentCastHash(
+  postId: string,
+  castHash: string
+): Promise<void> {
+  const key = getCommentCastHashesKey(postId);
+  if (redis) {
+    await redis.sadd(key, castHash);
+  } else {
+    const set = commentCastHashStore.get(key) || new Set();
+    set.add(castHash);
+    commentCastHashStore.set(key, set);
+  }
+}
+
+/**
+ * Get all registered comment cast hashes for a market.
+ * Used by market-activity to deduplicate Farcaster replies.
+ */
+export async function getCommentCastHashes(
+  postId: string
+): Promise<Set<string>> {
+  const key = getCommentCastHashesKey(postId);
+  if (redis) {
+    const members = await redis.smembers<string[]>(key);
+    return new Set(members);
+  }
+  return commentCastHashStore.get(key) || new Set();
+}
+
+/*//////////////////////////////////////////////////////////////
+                      RATE LIMITING
+//////////////////////////////////////////////////////////////*/
+
+const COMMENT_RATE_LIMIT = 3;        // max casts per fid per postId
+const COMMENT_RATE_LIMIT_TTL = 3600; // 1 hour window (seconds)
+
+// In-memory fallback for rate limiting
+const rateLimitStore = new Map<string, { count: number; expiresAt: number }>();
+
+function getCommentRateLimitKey(postId: string, fid: number): string {
+  return `${APP_NAME}:comment_rate:${postId}:${fid}`;
+}
+
+/**
+ * Check and increment the comment cast rate limit for a user on a market.
+ * Returns { allowed, remaining } based on a sliding window.
+ */
+export async function checkCommentRateLimit(
+  postId: string,
+  fid: number
+): Promise<{ allowed: boolean; remaining: number }> {
+  const key = getCommentRateLimitKey(postId, fid);
+
+  if (redis) {
+    const count = await redis.incr(key);
+    if (count === 1) {
+      await redis.expire(key, COMMENT_RATE_LIMIT_TTL);
+    }
+    return {
+      allowed: count <= COMMENT_RATE_LIMIT,
+      remaining: Math.max(0, COMMENT_RATE_LIMIT - count),
+    };
+  }
+
+  // In-memory fallback
+  const now = Date.now();
+  const existing = rateLimitStore.get(key);
+  if (existing && existing.expiresAt > now) {
+    existing.count += 1;
+    return {
+      allowed: existing.count <= COMMENT_RATE_LIMIT,
+      remaining: Math.max(0, COMMENT_RATE_LIMIT - existing.count),
+    };
+  }
+  rateLimitStore.set(key, {
+    count: 1,
+    expiresAt: now + COMMENT_RATE_LIMIT_TTL * 1000,
+  });
+  return { allowed: true, remaining: COMMENT_RATE_LIMIT - 1 };
+}
+
 export async function clearAllMarketData(): Promise<{ deletedKeys: number }> {
   if (redis) {
     // Get all recent market postIds so we can delete their cast mappings
@@ -340,6 +473,7 @@ export async function clearAllMarketData(): Promise<{ deletedKeys: number }> {
     const keysToDelete = [
       RECENT_MARKETS_KEY,
       ...postIds.map((postId: string) => getCastMappingKey(postId)),
+      ...postIds.map((postId: string) => getCommentCastHashesKey(postId)),
     ];
     if (keysToDelete.length > 0) {
       await redis.del(...keysToDelete);
@@ -350,6 +484,7 @@ export async function clearAllMarketData(): Promise<{ deletedKeys: number }> {
   const count = recentMarketsStore.length;
   for (const postId of recentMarketsStore) {
     castHashStore.delete(getCastMappingKey(postId));
+    commentCastHashStore.delete(getCommentCastHashesKey(postId));
   }
   recentMarketsStore.length = 0;
   return { deletedKeys: count + 1 };

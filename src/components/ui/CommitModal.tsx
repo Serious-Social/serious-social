@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAccount, useConnect, useSwitchChain } from 'wagmi';
 import { useMiniApp } from '@neynar/react';
 import { useCommitFlow } from '~/hooks/useBeliefMarketWrite';
@@ -19,7 +19,7 @@ interface CommitModalProps {
   onSuccess?: () => void;
 }
 
-type Step = 'input' | 'approve' | 'commit' | 'success';
+type Step = 'input' | 'comment' | 'approve' | 'commit' | 'success';
 
 export function CommitModal({ isOpen, onClose, side, marketAddress, postId, castText, lockPeriod, earlyWithdrawPenaltyBps, onSuccess }: CommitModalProps) {
   const { isConnected, chain, address } = useAccount();
@@ -29,6 +29,13 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
 
   const [amount, setAmount] = useState('');
   const [step, setStep] = useState<Step>('input');
+  const [comment, setComment] = useState('');
+  const [isPublishingCast, setIsPublishingCast] = useState(false);
+  const [castPublishError, setCastPublishError] = useState<string | null>(null);
+  const [castPublished, setCastPublished] = useState(false);
+
+  // Ref to track if success handler has already run for this commit
+  const successHandledRef = useRef(false);
 
   const amountBigInt = parseUSDC(amount);
   const isValidAmount = amountBigInt > 0n;
@@ -62,44 +69,104 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
     }
   }, [isApproveSuccess, step, refetchAllowance, resetApprove]);
 
-  // Handle commit success -> move to success step and send notification
+  // Handle commit success -> publish comment, then notify + record participant
   useEffect(() => {
-    if (isCommitSuccess && step === 'commit') {
-      setStep('success');
+    if (isCommitSuccess && step === 'commit' && !successHandledRef.current) {
+      successHandledRef.current = true;
+      handleCommitSuccess();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCommitSuccess, step]);
 
-      // Send notification to claim author (fire and forget)
-      const notifyType = side === Side.Support ? 'support' : 'challenge';
-      fetch('/api/notify', {
+  /** Publish comment as a Farcaster reply. Returns the cast hash on success. */
+  async function publishCommentCast(): Promise<string | undefined> {
+    const res = await fetch('/api/publish-comment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        postId,
+        text: comment.trim(),
+        side: side === Side.Support ? 'support' : 'challenge',
+        amount: formatUSDC(amountBigInt),
+      }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to publish comment');
+    }
+    const data = await res.json();
+    return data.castHash || undefined;
+  }
+
+  async function handleCommitSuccess() {
+    setStep('success');
+
+    const sideStr = side === Side.Support ? 'support' : 'challenge';
+    const formattedAmount = formatUSDC(amountBigInt);
+    let publishedCastHash: string | undefined;
+
+    // 1. Publish comment as Farcaster reply (sequential, tracked)
+    if (comment.trim()) {
+      setIsPublishingCast(true);
+      setCastPublishError(null);
+      try {
+        publishedCastHash = await publishCommentCast();
+        setCastPublished(true);
+      } catch (err) {
+        console.error('Failed to publish comment cast:', err);
+        setCastPublishError(err instanceof Error ? err.message : 'Failed to publish comment');
+      } finally {
+        setIsPublishingCast(false);
+      }
+    }
+
+    // 2. Fire-and-forget: notify + record participant (parallel)
+    fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: sideStr, postId, amount: formattedAmount }),
+    }).catch((err) => console.error('Failed to send notification:', err));
+
+    if (context?.user?.fid) {
+      fetch('/api/market-participants', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: notifyType,
           postId,
-          amount: formatUSDC(amountBigInt),
+          fid: context.user.fid,
+          side: sideStr,
+          amount: formattedAmount,
+          comment: comment.trim() || undefined,
+          commentCastHash: publishedCastHash,
         }),
-      }).catch((err) => console.error('Failed to send notification:', err));
-
-      // Record participant (fire and forget)
-      if (context?.user?.fid) {
-        fetch('/api/market-participants', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            postId,
-            fid: context.user.fid,
-            side: side === Side.Support ? 'support' : 'challenge',
-            amount: formatUSDC(amountBigInt),
-          }),
-        }).catch((err) => console.error('Failed to record participant:', err));
-      }
+      }).catch((err) => console.error('Failed to record participant:', err));
     }
-  }, [isCommitSuccess, step, side, postId, amountBigInt, context]);
+  }
+
+  async function handleRetryPublish() {
+    setIsPublishingCast(true);
+    setCastPublishError(null);
+    try {
+      await publishCommentCast();
+      setCastPublished(true);
+    } catch (err) {
+      console.error('Failed to publish comment cast:', err);
+      setCastPublishError(err instanceof Error ? err.message : 'Failed to publish comment');
+    } finally {
+      setIsPublishingCast(false);
+    }
+  }
 
   // Reset state when modal closes
   useEffect(() => {
     if (!isOpen) {
       setAmount('');
+      setComment('');
       setStep('input');
+      setIsPublishingCast(false);
+      setCastPublishError(null);
+      setCastPublished(false);
+      successHandledRef.current = false;
       resetApprove();
       resetCommit();
     }
@@ -109,6 +176,12 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
 
   const handleProceed = () => {
     if (!isValidAmount) return;
+    setStep('comment');
+  };
+
+  const handleCommentProceed = () => {
+    // For challenges, comment is mandatory
+    if (side === Side.Oppose && !comment.trim()) return;
 
     if (needsApproval(amountBigInt)) {
       setStep('approve');
@@ -123,7 +196,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
     commit(amountBigInt);
   };
 
-  const handleSuccess = () => {
+  const handleDone = () => {
     onSuccess?.();
     onClose();
   };
@@ -131,6 +204,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
   const isWrongChain = chain?.id !== DEFAULT_CHAIN_ID;
 
   const sideLabel = side === Side.Support ? 'Support' : 'Challenge';
+  const lockPeriodStr = lockPeriod != null ? formatLockPeriod(lockPeriod) : '30 days';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -219,8 +293,8 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
               <div className="bg-theme-bg border border-theme-border rounded-lg p-4 text-sm text-theme-text-muted">
                 <p>
                   {side === Side.Support
-                    ? `By supporting, you signal that you believe this claim. Your capital is committed for ${lockPeriod != null ? formatLockPeriod(lockPeriod) : '30 days'}. Early withdrawal incurs a ${earlyWithdrawPenaltyBps != null ? formatBps(earlyWithdrawPenaltyBps) : '5%'} penalty.`
-                    : `By challenging, you signal measured disagreement. Your capital is committed for ${lockPeriod != null ? formatLockPeriod(lockPeriod) : '30 days'}. Early withdrawal incurs a ${earlyWithdrawPenaltyBps != null ? formatBps(earlyWithdrawPenaltyBps) : '5%'} penalty.`}
+                    ? `By supporting, you signal that you believe this claim. Your capital is committed for ${lockPeriodStr}. Early withdrawal incurs a ${earlyWithdrawPenaltyBps != null ? formatBps(earlyWithdrawPenaltyBps) : '5%'} penalty.`
+                    : `By challenging, you signal measured disagreement. Your capital is committed for ${lockPeriodStr}. Early withdrawal incurs a ${earlyWithdrawPenaltyBps != null ? formatBps(earlyWithdrawPenaltyBps) : '5%'} penalty.`}
                 </p>
               </div>
 
@@ -229,8 +303,60 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
                 disabled={!isValidAmount || !hasBalance(amountBigInt)}
                 className="w-full py-4 bg-gradient-primary hover:opacity-90 disabled:bg-theme-border disabled:cursor-not-allowed rounded-xl text-white font-medium transition-colors"
               >
-                {needsApproval(amountBigInt) ? 'Approve & Commit' : 'Commit'}
+                Continue
               </button>
+            </div>
+          )}
+
+          {/* Comment step */}
+          {isConnected && !isWrongChain && step === 'comment' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-theme-text mb-2">
+                  {side === Side.Oppose
+                    ? 'Why are you challenging this? (required)'
+                    : 'Add a comment (optional)'}
+                </label>
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder={
+                    side === Side.Oppose
+                      ? 'Explain why you disagree...'
+                      : 'Share your thoughts...'
+                  }
+                  maxLength={500}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-theme-border bg-theme-bg rounded-xl focus:ring-2 focus:ring-theme-primary focus:border-transparent outline-none text-theme-text placeholder-theme-text-muted resize-none text-sm"
+                />
+                <p className="text-xs text-theme-text-muted mt-1 text-right">
+                  {comment.length}/500
+                </p>
+              </div>
+
+              {/* Summary */}
+              <div className="bg-theme-bg border border-theme-border rounded-lg p-3 text-sm text-theme-text-muted">
+                <p>
+                  {sideLabel}ing with <strong className="text-theme-text">${formatUSDC(amountBigInt)}</strong>
+                  {' '}&mdash; locked {lockPeriodStr}
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setStep('input')}
+                  className="flex-1 py-3 bg-theme-surface border border-theme-border hover:bg-theme-border rounded-xl text-theme-text font-medium transition-colors"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={handleCommentProceed}
+                  disabled={side === Side.Oppose && !comment.trim()}
+                  className="flex-1 py-3 bg-gradient-primary hover:opacity-90 disabled:bg-theme-border disabled:cursor-not-allowed rounded-xl text-white font-medium transition-colors"
+                >
+                  {needsApproval(amountBigInt) ? 'Approve & Commit' : 'Commit'}
+                </button>
+              </div>
             </div>
           )}
 
@@ -333,46 +459,79 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
           {/* Success step */}
           {isConnected && !isWrongChain && step === 'success' && (
             <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto flex items-center justify-center text-theme-positive">
-                <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+              {/* Icon: spinner while publishing, checkmark when done */}
+              <div className="w-16 h-16 mx-auto flex items-center justify-center">
+                {isPublishingCast ? (
+                  <div className="w-full h-full border-4 border-theme-border border-t-theme-primary rounded-full animate-spin" />
+                ) : (
+                  <div className="text-theme-positive">
+                    <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                )}
               </div>
 
               <div>
-                <p className="font-medium text-theme-text">Commitment successful!</p>
+                <p className="font-medium text-theme-text">
+                  {isPublishingCast ? 'Publishing your conviction...' : 'Commitment successful!'}
+                </p>
                 <p className="text-sm text-theme-text-muted mt-1">
                   You {side === Side.Support ? 'supported' : 'challenged'} this claim with ${formatUSDC(amountBigInt)}
                 </p>
               </div>
 
-              <p className="text-sm text-theme-text-muted">
-                Challenge your friends to weigh in.
-              </p>
+              {/* Cast publish status */}
+              {comment.trim() && !isPublishingCast && (
+                <div className="text-sm">
+                  {castPublished ? (
+                    <p className="text-theme-positive">Your conviction is live on Farcaster</p>
+                  ) : castPublishError ? (
+                    <div className="space-y-2">
+                      <p className="text-red-500 text-xs">{castPublishError}</p>
+                      <button
+                        onClick={handleRetryPublish}
+                        className="text-sm text-theme-primary hover:underline font-medium"
+                      >
+                        Retry publishing
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              )}
 
-              {context?.user?.fid ? (
+              {/* Friend challenger (secondary action) */}
+              {!isPublishingCast && (
                 <>
-                  <FriendChallenger
-                    viewerFid={context.user.fid}
-                    side={side === Side.Support ? 'support' : 'challenge'}
-                    amount={formatUSDC(amountBigInt)}
-                    postId={postId}
-                    castText={castText}
-                  />
-                  <button
-                    onClick={handleSuccess}
-                    className="w-full py-2 text-sm text-theme-text-muted hover:text-theme-text transition-colors"
-                  >
-                    Skip
-                  </button>
+                  <p className="text-sm text-theme-text-muted">
+                    Challenge your friends to weigh in.
+                  </p>
+
+                  {context?.user?.fid ? (
+                    <>
+                      <FriendChallenger
+                        viewerFid={context.user.fid}
+                        side={side === Side.Support ? 'support' : 'challenge'}
+                        amount={formatUSDC(amountBigInt)}
+                        postId={postId}
+                        castText={castText}
+                      />
+                      <button
+                        onClick={handleDone}
+                        className="w-full py-2 text-sm text-theme-text-muted hover:text-theme-text transition-colors"
+                      >
+                        Done
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={handleDone}
+                      className="w-full py-3 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
+                    >
+                      Done
+                    </button>
+                  )}
                 </>
-              ) : (
-                <button
-                  onClick={handleSuccess}
-                  className="w-full py-3 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
-                >
-                  Done
-                </button>
               )}
             </div>
           )}

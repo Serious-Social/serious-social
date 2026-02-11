@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import type { MarketData } from "~/app/api/markets/route";
+import { SegmentedBar } from "~/components/ui/BeliefCurve";
 
 /**
  * HomeTab component displays the main landing content for the mini app.
@@ -125,9 +126,9 @@ export function HomeTab({ fid }: { fid?: number }) {
 
       {/* Footer */}
       <div className="pt-4 border-t border-theme-border text-center">
-        <p className="text-xs text-theme-text-muted/70">
-          Powered by Neynar
-        </p>
+        <span className="font-mono text-xs text-theme-positive/80 tracking-wider">
+          patience_is_power<span className="inline-block w-2 h-3.5 bg-theme-positive/80 ml-0.5 align-middle cursor-blink" />
+        </span>
       </div>
 
       {/* Floating action buttons */}
@@ -207,19 +208,7 @@ function MarketCard({ market }: { market: MarketData }) {
               )}
             </div>
             {/* Segmented belief bar */}
-            <div className="flex gap-0.5 w-full">
-              {Array.from({ length: 20 }).map((_, i) => {
-                const filledSegments = Math.round((beliefPercent / 100) * 20);
-                return (
-                  <div
-                    key={i}
-                    className={`h-2 flex-1 ${
-                      i < filledSegments ? 'bg-theme-positive' : 'bg-theme-border'
-                    }`}
-                  />
-                );
-              })}
-            </div>
+            <SegmentedBar percent={beliefPercent} segments={20} secondaryColor="negative" />
             {/* Support/Challenge labels */}
             <div className="flex justify-between text-xs text-theme-text-muted">
               <span>Support</span>
