@@ -46,28 +46,56 @@ export function MarketView({ postId, intent }: MarketViewProps) {
   // Participants
   const [participants, setParticipants] = useState<{ support: ProfileInfo[]; challenge: ProfileInfo[] } | null>(null);
 
-  // Refs
-  const howItWorksRef = useRef<HTMLDetailsElement>(null);
-
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalSide, setModalSide] = useState<Side>(Side.Support);
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState(0);
+  const [tabKey, setTabKey] = useState(0);
+
+  // Claim expansion
+  const [isClaimExpanded, setIsClaimExpanded] = useState(false);
+
+  // Bottom sheet
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+
+  // Swipe tracking
+  const touchRef = useRef<{ x: number; y: number } | null>(null);
+
+  const tabs = ['Signal', 'Activity', 'Position'];
+
+  const switchTab = (i: number) => {
+    setActiveTab(i);
+    setTabKey(k => k + 1);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchRef.current) return;
+    const dx = e.changedTouches[0].clientX - touchRef.current.x;
+    const dy = e.changedTouches[0].clientY - touchRef.current.y;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      const next = activeTab + (dx < 0 ? 1 : -1);
+      if (next >= 0 && next < tabs.length) switchTab(next);
+    }
+    touchRef.current = null;
+  };
 
   // Fetch cast content via mapping
   useEffect(() => {
     async function fetchContent() {
       try {
-        // First get the cast mapping (postId -> castHash)
         const mappingResponse = await fetch(`/api/cast-mapping?postId=${postId}`);
         if (!mappingResponse.ok) {
           console.error('Cast mapping not found');
           setContentLoading(false);
           return;
         }
-
         const mapping = await mappingResponse.json();
-
-        // Then fetch the actual cast from Neynar
         const castResponse = await fetch(`/api/casts?hash=${mapping.castHash}`);
         if (castResponse.ok) {
           const data = await castResponse.json();
@@ -133,6 +161,9 @@ export function MarketView({ postId, intent }: MarketViewProps) {
     refetchPositions();
   };
 
+  // First non-withdrawn position for inline display
+  const firstActivePosition = positions.find(p => !p.withdrawn);
+
   if (isLoading) {
     return (
       <div className="px-4 py-6 max-w-lg mx-auto bg-theme-bg min-h-screen">
@@ -190,7 +221,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
       {/* Back button */}
       <Link
         href="/"
-        className="inline-flex items-center gap-2 text-theme-text-muted hover:text-theme-text mb-4"
+        className="inline-flex items-center gap-2 text-theme-text-muted hover:text-theme-text mb-3"
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -198,37 +229,47 @@ export function MarketView({ postId, intent }: MarketViewProps) {
         Back to Home
       </Link>
 
-      <div className="space-y-4">
-        {/* Cast content */}
-        <section className="bg-theme-surface border border-theme-border rounded-xl p-4 overflow-hidden">
-          <h2 className="text-sm font-medium text-theme-text-muted mb-2">Claim</h2>
+      <div className="space-y-3">
+        {/* Claim — truncated with toggle */}
+        <section>
           {contentLoading ? (
-            <div className="animate-pulse">
-              <div className="h-4 bg-theme-border rounded w-3/4 mb-2"></div>
+            <div className="animate-pulse space-y-2">
+              <div className="h-4 bg-theme-border rounded w-3/4"></div>
+              <div className="h-4 bg-theme-border rounded w-full"></div>
               <div className="h-4 bg-theme-border rounded w-1/2"></div>
             </div>
           ) : castContent ? (
             <div>
-              <p className="text-theme-text whitespace-pre-wrap break-words mb-3">{castContent.text}</p>
-              <div className="flex items-center gap-2 text-xs text-theme-text-muted">
-                {castContent.author.pfpUrl && (
-                  <img
-                    src={castContent.author.pfpUrl}
-                    alt={castContent.author.displayName}
-                    className="w-5 h-5 rounded-full"
-                  />
-                )}
-                <span>@{castContent.author.username}</span>
-              </div>
+              <p className={`text-sm font-medium leading-relaxed text-theme-text whitespace-pre-wrap break-words ${!isClaimExpanded ? 'line-clamp-3' : ''}`}>
+                {castContent.text}
+              </p>
+              {castContent.text.length > 120 && (
+                <button
+                  onClick={() => setIsClaimExpanded(!isClaimExpanded)}
+                  className="text-xs font-semibold text-theme-primary mt-1"
+                >
+                  {isClaimExpanded ? 'show less' : 'read more'}
+                </button>
+              )}
             </div>
           ) : (
-            <p className="text-theme-text-muted italic">Content not available</p>
+            <p className="text-theme-text-muted italic text-sm">Content not available</p>
           )}
         </section>
 
-        {/* Belief curve */}
+        {/* Inline position */}
+        {isConnected && firstActivePosition && marketAddress && (
+          <InlinePositionRow
+            position={firstActivePosition}
+            marketAddress={marketAddress as `0x${string}`}
+            totalPositions={positions.filter(p => !p.withdrawn).length}
+            onTap={() => switchTab(2)}
+          />
+        )}
+
+        {/* Belief Signal — PRIMARY section */}
         <section className="bg-theme-surface border border-theme-border rounded-xl p-4">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-medium text-theme-text-muted">Belief Signal</h2>
             {state && getMarketStatus(state) !== 'no_market' && (
               <StatusBadge status={getMarketStatus(state)} />
@@ -236,53 +277,105 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           </div>
           <BeliefCurve
             state={state ?? null}
+            section="primary"
             beliefChange24h={beliefChange24h}
             participants={participants ?? undefined}
             earlyWithdrawPenaltyPercent={marketParams ? formatBps(marketParams.earlyWithdrawPenaltyBps) : undefined}
-            onInfoClick={() => {
-              const el = howItWorksRef.current;
-              if (el) {
-                el.open = true;
-                el.scrollIntoView({ behavior: 'smooth' });
-              }
-            }}
+            onInfoClick={() => setIsSheetOpen(true)}
           />
         </section>
 
-        {/* Friends in this market */}
-        <FriendsInMarket postId={postId} viewerFid={context?.user?.fid} />
+        {/* Tab bar — underline style */}
+        <div className="flex border-b border-theme-border sticky top-0 bg-theme-bg z-10 pt-0.5" role="tablist">
+          {tabs.map((label, i) => (
+            <button
+              key={label}
+              role="tab"
+              aria-selected={activeTab === i}
+              onClick={() => switchTab(i)}
+              className={`flex-1 py-2.5 text-xs font-medium transition-colors relative flex items-center justify-center gap-1 ${
+                activeTab === i
+                  ? 'text-theme-text font-bold'
+                  : 'text-theme-text-muted'
+              }`}
+            >
+              {label}
+              {/* Badge: Position tab shows position count */}
+              {i === 2 && positions.filter(p => !p.withdrawn).length > 0 && (
+                <span className="text-[8px] font-bold min-w-[14px] h-[14px] rounded-full inline-flex items-center justify-center px-1 bg-theme-positive/10 text-theme-positive border border-theme-positive/25">
+                  {positions.filter(p => !p.withdrawn).length}
+                </span>
+              )}
+              {/* Active underline */}
+              {activeTab === i && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-theme-primary" />
+              )}
+            </button>
+          ))}
+        </div>
 
-        {/* User's positions - prominent after staking (per UX spec) */}
-        {isConnected && positions.length > 0 && (
-          <section className="bg-gradient-to-br from-theme-primary/10 to-theme-surface border-2 border-theme-primary/30 rounded-xl p-4">
-            <h2 className="text-sm font-semibold text-theme-primary mb-3 flex items-center gap-2">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              Your Positions
-            </h2>
+        {/* Tab content */}
+        <div
+          key={tabKey}
+          role="tabpanel"
+          className="fade-up min-h-[200px]"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          {/* Signal tab */}
+          {activeTab === 0 && (
             <div className="space-y-3">
-              {positions.map((pos) => (
-                <PositionCard
-                  key={pos.id.toString()}
-                  position={pos}
-                  marketAddress={marketAddress as `0x${string}`}
-                  minRewardDuration={marketParams ? marketParams.minRewardDuration : undefined}
-                  earlyWithdrawPenaltyBps={marketParams?.earlyWithdrawPenaltyBps}
-                  onAction={() => {
-                    refetch();
-                    refetchPositions();
-                  }}
+              <section className="bg-theme-surface border border-theme-border rounded-xl p-4">
+                <BeliefCurve
+                  state={state ?? null}
+                  section="secondary"
+                  beliefChange24h={beliefChange24h}
+                  earlyWithdrawPenaltyPercent={marketParams ? formatBps(marketParams.earlyWithdrawPenaltyBps) : undefined}
                 />
-              ))}
+              </section>
+              <FriendsInMarket postId={postId} viewerFid={context?.user?.fid} />
             </div>
-          </section>
-        )}
+          )}
 
-        {/* Activity feed */}
-        <ActivityFeed postId={postId} />
+          {/* Activity tab */}
+          {activeTab === 1 && (
+            <ActivityFeed postId={postId} bare />
+          )}
 
-        {/* Share button (secondary action) */}
+          {/* Position tab */}
+          {activeTab === 2 && (
+            <div>
+              {isConnected && positions.length > 0 ? (
+                <div className="space-y-3">
+                  {positions.map((pos) => (
+                    <PositionCard
+                      key={pos.id.toString()}
+                      position={pos}
+                      marketAddress={marketAddress as `0x${string}`}
+                      minRewardDuration={marketParams ? marketParams.minRewardDuration : undefined}
+                      earlyWithdrawPenaltyBps={marketParams?.earlyWithdrawPenaltyBps}
+                      onAction={() => {
+                        refetch();
+                        refetchPositions();
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="border border-dashed border-theme-border bg-theme-surface rounded-lg p-7 text-center">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-theme-text mb-1">
+                    No active positions
+                  </div>
+                  <div className="text-xs text-theme-text-muted leading-relaxed">
+                    Support or Challenge this claim to open a position and earn from the reward pool.
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Share button */}
         <section>
           <ShareButton
             buttonText="Share this market"
@@ -298,36 +391,6 @@ export function MarketView({ postId, intent }: MarketViewProps) {
 
         {/* Spacer for sticky bottom bar */}
         <div className="h-20" />
-
-        {/* Rules/Info (collapsible) */}
-        <details id="how-it-works" ref={howItWorksRef} className="bg-theme-surface border border-theme-border rounded-xl">
-          <summary className="px-4 py-3 cursor-pointer text-sm font-medium text-theme-text">
-            How it works
-          </summary>
-          <div className="px-4 pb-4 text-sm text-theme-text-muted space-y-2">
-            <p>
-              <strong className="text-theme-text">Supporting</strong> a claim means staking USDC to signal that you believe it.
-              Your capital is committed for {marketParams ? formatLockPeriod(marketParams.lockPeriod) : '30 days'}.
-            </p>
-            <p>
-              <strong className="text-theme-text">Challenging</strong> means staking against the claim. This creates measured
-              disagreement and improves signal clarity.
-            </p>
-            <p>
-              <strong className="text-theme-text">Early withdrawal.</strong> You can withdraw before the lock period ends,
-              but a {marketParams ? formatBps(marketParams.earlyWithdrawPenaltyBps) : '5%'} penalty is deducted and added to the reward pool. Early exits also
-              forfeit any pending rewards.
-            </p>
-            <p>
-              <strong className="text-theme-text">Time matters.</strong> The longer your capital stays committed, the more it
-              contributes to the belief signal and the more rewards you earn.
-            </p>
-            <p>
-              <strong className="text-theme-text">No one wins or loses.</strong> Your principal is returned after the commitment
-              period. Rewards come from a shared pool, not from other participants.
-            </p>
-          </div>
-        </details>
 
         {/* Market info */}
         <div className="text-center text-xs text-theme-text-muted/70 space-y-1 pt-4 border-t border-theme-border">
@@ -354,6 +417,36 @@ export function MarketView({ postId, intent }: MarketViewProps) {
         </div>
       </div>
 
+      {/* Bottom sheet: How it works */}
+      {isSheetOpen && (
+        <div className="fixed inset-0 z-50" onClick={() => setIsSheetOpen(false)}>
+          <div className="absolute inset-0 bg-black/60 sheet-backdrop" />
+          <div className="absolute bottom-0 left-0 right-0 bg-theme-surface rounded-t-2xl sheet-panel max-h-[65%] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-8 h-[3px] rounded-full bg-theme-border" />
+            </div>
+            <div className="px-5 py-3">
+              <h2 className="text-sm font-bold text-theme-text mb-3">How Belief Markets Work</h2>
+              <div className="space-y-3 pb-6">
+                {[
+                  { n: '01', title: 'Commit Capital', desc: `Support or Challenge a claim by committing USDC. Your capital is committed for ${marketParams ? formatLockPeriod(marketParams.lockPeriod) : '30 days'}.` },
+                  { n: '02', title: 'Time-Weighted Signal', desc: 'The longer your capital stays committed, the more it contributes to the belief signal. Earlier and longer commitments earn more rewards.' },
+                  { n: '03', title: 'Earn Rewards', desc: `Rewards come from a shared pool, not other participants. Early withdrawal incurs a ${marketParams ? formatBps(marketParams.earlyWithdrawPenaltyBps) : '5%'} penalty. Your principal is returned after the commitment period.` },
+                ].map((step, i) => (
+                  <div key={step.n} className={`flex gap-3 py-3 ${i < 2 ? 'border-b border-theme-border/40' : ''}`}>
+                    <span className="text-[10px] font-bold text-theme-primary min-w-[18px]">{step.n}</span>
+                    <div>
+                      <div className="text-xs font-bold text-theme-text mb-0.5">{step.title}</div>
+                      <div className="text-xs text-theme-text-muted leading-relaxed">{step.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Commit Modal */}
       {marketAddress && (
         <CommitModal
@@ -371,6 +464,48 @@ export function MarketView({ postId, intent }: MarketViewProps) {
     </div>
   );
 }
+
+// ── Inline Position Row ──────────────────────────────────────────────────────
+// Separate component so it can call usePendingRewards hook
+
+interface InlinePositionRowProps {
+  position: Position & { id: bigint };
+  marketAddress: `0x${string}`;
+  totalPositions: number;
+  onTap: () => void;
+}
+
+function InlinePositionRow({ position, marketAddress, totalPositions, onTap }: InlinePositionRowProps) {
+  const { data: pendingRewards } = usePendingRewards(marketAddress, position.id);
+  const isSupport = position.side === Side.Support;
+
+  return (
+    <button
+      onClick={onTap}
+      className={`w-full flex items-center justify-between py-2 px-3 rounded-lg transition-all active:scale-[0.99] ${
+        isSupport
+          ? 'bg-theme-positive/10 border border-theme-positive/25'
+          : 'bg-theme-negative/10 border border-theme-negative/25'
+      }`}
+    >
+      <div className="flex items-center gap-1.5">
+        <div className={`w-[5px] h-[5px] rounded-full ${isSupport ? 'bg-theme-positive shadow-[0_0_5px_rgba(167,139,250,0.4)]' : 'bg-theme-negative shadow-[0_0_5px_rgba(251,146,60,0.4)]'}`} />
+        <span className="text-xs font-bold text-theme-text">${formatUSDC(position.amount)}</span>
+        <span className="text-[10px] text-theme-text-muted">{isSupport ? 'support' : 'challenge'}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        {pendingRewards && pendingRewards > 0n && (
+          <span className="text-xs font-bold text-theme-positive">+${formatUSDC(pendingRewards)}</span>
+        )}
+        {totalPositions > 1 && (
+          <span className="text-[10px] text-theme-text-muted">+{totalPositions - 1} more</span>
+        )}
+      </div>
+    </button>
+  );
+}
+
+// ── Position Card ────────────────────────────────────────────────────────────
 
 interface PositionCardProps {
   position: Position & { id: bigint };
