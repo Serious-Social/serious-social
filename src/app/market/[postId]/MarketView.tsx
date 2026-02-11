@@ -379,7 +379,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
         <section>
           <ShareButton
             buttonText="Share this market"
-            className="w-full py-3 rounded-xl font-medium transition-colors bg-theme-surface border border-theme-border text-theme-text-muted hover:text-theme-text hover:bg-theme-border"
+            className="w-full py-3 rounded-xl font-medium transition-colors bg-theme-primary/15 border border-theme-primary/30 text-white hover:bg-theme-primary/25"
             cast={{
               text: castContent
                 ? `"${castContent.text.slice(0, 100)}${castContent.text.length > 100 ? '...' : ''}"\n\nDo you believe this? Put your money where your mouth is.`
