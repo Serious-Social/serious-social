@@ -156,12 +156,7 @@ export function BeliefCurve({ state, size = 'full', section = 'all', onInfoClick
             <span>Support</span>
             <span>Challenge</span>
           </div>
-          <div className="h-1.5 rounded-full overflow-hidden bg-theme-negative/10 flex">
-            <div
-              className="bg-gradient-primary rounded-full transition-[width] duration-700"
-              style={{ width: `${beliefPercent}%` }}
-            />
-          </div>
+          <SegmentedBar percent={beliefPercent} segments={20} />
           <p className="text-[9px] text-theme-text-muted/60 text-center tracking-wide">
             weighted by time × capital
           </p>

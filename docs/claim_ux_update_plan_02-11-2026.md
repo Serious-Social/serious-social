@@ -46,6 +46,11 @@ The market detail page renders 10+ sections in a single vertical scroll. On mobi
 | 5 | "How it Works" bottom sheet modal | `MarketView.tsx` | scroll height + UX fix |
 | 6 | Inline position display (real data, not badge pointer) | `MarketView.tsx` | net neutral (better density) |
 | 7 | Empty states for Position tab | `MarketView.tsx` | — (UX quality) |
+| 8 | "weighted by time × capital" explainer under belief bar | `BeliefCurve.tsx` | — (clarity) |
+| 9 | Segmented belief bar in primary section (match home cards) | `BeliefCurve.tsx` | — (consistency) |
+| 10 | Activity feed loading skeleton (prevent empty flash) | `ActivityFeed.tsx` | — (UX polish) |
+| 11 | Singular/plural "participant(s)" grammar fix | `BeliefCurve.tsx` | — (UX polish) |
+| 12 | Bottom sheet dismiss on backdrop click fix | `MarketView.tsx` | — (UX fix) |
 
 ---
 
