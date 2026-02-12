@@ -39,6 +39,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
   // Cast content state
   const [castContent, setCastContent] = useState<CastContent | null>(null);
   const [contentLoading, setContentLoading] = useState(true);
+  const [parentCastHash, setParentCastHash] = useState<string | undefined>();
 
   // 24h belief change
   const [beliefChange24h, setBeliefChange24h] = useState<number | null>(null);
@@ -96,6 +97,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           return;
         }
         const mapping = await mappingResponse.json();
+        setParentCastHash(mapping.castHash);
         const castResponse = await fetch(`/api/casts?hash=${mapping.castHash}`);
         if (castResponse.ok) {
           const data = await castResponse.json();
@@ -458,6 +460,7 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           marketAddress={marketAddress as `0x${string}`}
           postId={postId}
           castText={castContent?.text}
+          parentCastHash={parentCastHash}
           lockPeriod={marketParams?.lockPeriod}
           earlyWithdrawPenaltyBps={marketParams?.earlyWithdrawPenaltyBps}
           onSuccess={handleCommitSuccess}

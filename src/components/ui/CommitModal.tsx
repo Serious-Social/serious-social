@@ -6,6 +6,7 @@ import { useMiniApp } from '@neynar/react';
 import { useCommitFlow } from '~/hooks/useBeliefMarketWrite';
 import { FriendChallenger } from '~/components/ui/FriendChallenger';
 import { Side, formatUSDC, parseUSDC, formatBps, formatLockPeriod, DEFAULT_CHAIN_ID, CONTRACTS } from '~/lib/contracts';
+import { APP_URL } from '~/lib/constants';
 
 interface CommitModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface CommitModalProps {
   marketAddress: `0x${string}`;
   postId: string;
   castText?: string;
+  parentCastHash?: string;
   lockPeriod?: number;
   earlyWithdrawPenaltyBps?: number;
   onSuccess?: () => void;
@@ -21,18 +23,15 @@ interface CommitModalProps {
 
 type Step = 'input' | 'comment' | 'approve' | 'commit' | 'success';
 
-export function CommitModal({ isOpen, onClose, side, marketAddress, postId, castText, lockPeriod, earlyWithdrawPenaltyBps, onSuccess }: CommitModalProps) {
+export function CommitModal({ isOpen, onClose, side, marketAddress, postId, castText, parentCastHash, lockPeriod, earlyWithdrawPenaltyBps, onSuccess }: CommitModalProps) {
   const { isConnected, chain, address } = useAccount();
   const { connectors, connect } = useConnect();
   const { switchChain } = useSwitchChain();
-  const { context } = useMiniApp();
+  const { context, actions } = useMiniApp();
 
   const [amount, setAmount] = useState('');
   const [step, setStep] = useState<Step>('input');
   const [comment, setComment] = useState('');
-  const [isPublishingCast, setIsPublishingCast] = useState(false);
-  const [castPublishError, setCastPublishError] = useState<string | null>(null);
-  const [castPublished, setCastPublished] = useState(false);
 
   // Ref to track if success handler has already run for this commit
   const successHandledRef = useRef(false);
@@ -78,45 +77,30 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCommitSuccess, step]);
 
-  /** Publish comment as a Farcaster reply. Returns the cast hash on success. */
-  async function publishCommentCast(): Promise<string | undefined> {
-    const res = await fetch('/api/publish-comment', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        postId,
-        text: comment.trim(),
-        side: side === Side.Support ? 'support' : 'challenge',
-        amount: formatUSDC(amountBigInt),
-      }),
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || 'Failed to publish comment');
-    }
-    const data = await res.json();
-    return data.castHash || undefined;
-  }
-
   async function handleCommitSuccess() {
     setStep('success');
 
     const sideStr = side === Side.Support ? 'support' : 'challenge';
+    const sideVerb = side === Side.Support ? 'supported' : 'challenged';
     const formattedAmount = formatUSDC(amountBigInt);
     let publishedCastHash: string | undefined;
 
-    // 1. Publish comment as Farcaster reply (sequential, tracked)
+    // 1. Open Farcaster composer with comment as a reply to the original cast
     if (comment.trim()) {
-      setIsPublishingCast(true);
-      setCastPublishError(null);
+      const baseUrl = APP_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+      const marketUrl = `${baseUrl}/market/${postId}`;
+
+      const text = `${comment.trim()}\n\n[${sideVerb} with $${formattedAmount}]`;
+
       try {
-        publishedCastHash = await publishCommentCast();
-        setCastPublished(true);
+        const result = await actions.composeCast({
+          text,
+          embeds: [marketUrl] as [string],
+          ...(parentCastHash ? { parent: { type: 'cast' as const, hash: parentCastHash } } : {}),
+        });
+        publishedCastHash = result?.cast?.hash;
       } catch (err) {
-        console.error('Failed to publish comment cast:', err);
-        setCastPublishError(err instanceof Error ? err.message : 'Failed to publish comment');
-      } finally {
-        setIsPublishingCast(false);
+        console.error('Cast composer dismissed or failed:', err);
       }
     }
 
@@ -143,29 +127,12 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
     }
   }
 
-  async function handleRetryPublish() {
-    setIsPublishingCast(true);
-    setCastPublishError(null);
-    try {
-      await publishCommentCast();
-      setCastPublished(true);
-    } catch (err) {
-      console.error('Failed to publish comment cast:', err);
-      setCastPublishError(err instanceof Error ? err.message : 'Failed to publish comment');
-    } finally {
-      setIsPublishingCast(false);
-    }
-  }
-
   // Reset state when modal closes
   useEffect(() => {
     if (!isOpen) {
       setAmount('');
       setComment('');
       setStep('input');
-      setIsPublishingCast(false);
-      setCastPublishError(null);
-      setCastPublished(false);
       successHandledRef.current = false;
       resetApprove();
       resetCommit();
@@ -487,79 +454,48 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
           {/* Success step */}
           {isConnected && !isWrongChain && step === 'success' && (
             <div className="text-center space-y-4">
-              {/* Icon: spinner while publishing, checkmark when done */}
               <div className="w-16 h-16 mx-auto flex items-center justify-center">
-                {isPublishingCast ? (
-                  <div className="w-full h-full border-4 border-theme-border border-t-theme-primary rounded-full animate-spin" />
-                ) : (
-                  <div className="text-theme-positive">
-                    <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                )}
+                <div className="text-theme-positive">
+                  <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
               </div>
 
               <div>
-                <p className="font-medium text-theme-text">
-                  {isPublishingCast ? 'Publishing your conviction...' : 'Commitment successful!'}
-                </p>
+                <p className="font-medium text-theme-text">Commitment successful!</p>
                 <p className="text-sm text-theme-text-muted mt-1">
                   You {side === Side.Support ? 'supported' : 'challenged'} this claim with ${formatUSDC(amountBigInt)}
                 </p>
               </div>
 
-              {/* Cast publish status */}
-              {comment.trim() && !isPublishingCast && (
-                <div className="text-sm">
-                  {castPublished ? (
-                    <p className="text-theme-positive">Your conviction is live on Farcaster</p>
-                  ) : castPublishError ? (
-                    <div className="space-y-2">
-                      <p className="text-red-500 text-xs">{castPublishError}</p>
-                      <button
-                        onClick={handleRetryPublish}
-                        className="text-sm text-theme-primary hover:underline font-medium"
-                      >
-                        Retry publishing
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
-              )}
+              <p className="text-sm text-theme-text-muted">
+                Challenge your friends to weigh in.
+              </p>
 
-              {/* Friend challenger (secondary action) */}
-              {!isPublishingCast && (
+              {context?.user?.fid ? (
                 <>
-                  <p className="text-sm text-theme-text-muted">
-                    Challenge your friends to weigh in.
-                  </p>
-
-                  {context?.user?.fid ? (
-                    <>
-                      <FriendChallenger
-                        viewerFid={context.user.fid}
-                        side={side === Side.Support ? 'support' : 'challenge'}
-                        amount={formatUSDC(amountBigInt)}
-                        postId={postId}
-                        castText={castText}
-                      />
-                      <button
-                        onClick={handleDone}
-                        className="w-full py-2 text-sm text-theme-text-muted hover:text-theme-text transition-colors"
-                      >
-                        Done
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={handleDone}
-                      className="w-full py-3 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
-                    >
-                      Done
-                    </button>
-                  )}
+                  <FriendChallenger
+                    viewerFid={context.user.fid}
+                    side={side === Side.Support ? 'support' : 'challenge'}
+                    amount={formatUSDC(amountBigInt)}
+                    postId={postId}
+                    castText={castText}
+                  />
+                  <button
+                    onClick={handleDone}
+                    className="w-full py-2 text-sm text-theme-text-muted hover:text-theme-text transition-colors"
+                  >
+                    Done
+                  </button>
                 </>
+              ) : (
+                <button
+                  onClick={handleDone}
+                  className="w-full py-3 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
+                >
+                  Done
+                </button>
               )}
             </div>
           )}
