@@ -88,7 +88,9 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
     // 1. Open Farcaster composer with comment as a reply to the original cast
     if (comment.trim()) {
       const baseUrl = APP_URL || (typeof window !== 'undefined' ? window.location.origin : '');
-      const marketUrl = `${baseUrl}/market/${postId}`;
+      const url = new URL(`${baseUrl}/market/${postId}`);
+      url.searchParams.set('t', Date.now().toString());
+      const marketUrl = url.toString();
 
       const text = `${comment.trim()}\n\n[${sideVerb} with $${formattedAmount}]`;
 
