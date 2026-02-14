@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPublicClient, http } from 'viem';
-import { baseSepolia } from 'viem/chains';
+import { base } from 'viem/chains';
 import { getRecentMarkets, getCastMapping, setCastMapping, getBeliefSnapshots, BeliefSnapshotEntry } from '~/lib/kv';
 import { getNeynarClient } from '~/lib/neynar';
 import {
@@ -11,7 +11,7 @@ import {
 } from '~/lib/contracts';
 
 const publicClient = createPublicClient({
-  chain: baseSepolia,
+  chain: base,
   transport: http(),
 });
 
