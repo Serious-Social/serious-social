@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAccount, useConnect, useSwitchChain } from 'wagmi';
+import { useAccount, useConnect } from 'wagmi';
 import { useMiniApp } from '@neynar/react';
 import { useVaultAllowance, useUSDCBalance } from '~/hooks/useBeliefMarketWrite';
 import { useFarcasterApproveUSDC, useFarcasterCreateMarket } from '~/hooks/useFarcasterTransaction';
@@ -44,9 +44,8 @@ type Step = 'select' | 'commit' | 'approve' | 'create' | 'success';
 
 export function CreateMarketView() {
   const router = useRouter();
-  const { isConnected, chain, address } = useAccount();
+  const { isConnected, address } = useAccount();
   const { connectors, connect } = useConnect();
-  const { switchChain } = useSwitchChain();
   const { context } = useMiniApp();
   const { data: defaultParams } = useDefaultParams();
 
@@ -310,7 +309,6 @@ export function CreateMarketView() {
     }
   };
 
-  const isWrongChain = chain?.id !== DEFAULT_CHAIN_ID;
   const isOwnCast = selectedCast?.author.fid === context?.user?.fid;
   const canProceed = selectedCast && isValidAmount && hasBalance(amountBigInt) && !marketExists;
 
@@ -367,21 +365,8 @@ export function CreateMarketView() {
           </div>
         )}
 
-        {/* Wrong chain */}
-        {context?.user?.fid && isConnected && isWrongChain && (
-          <div className="bg-theme-surface border border-theme-border rounded-xl p-6 text-center space-y-4">
-            <p className="text-theme-text-muted">Please switch to Base</p>
-            <button
-              onClick={() => switchChain({ chainId: DEFAULT_CHAIN_ID })}
-              className="w-full py-3 px-4 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
-            >
-              Switch Network
-            </button>
-          </div>
-        )}
-
         {/* Select cast step */}
-        {context?.user?.fid && isConnected && !isWrongChain && step === 'select' && (
+        {context?.user?.fid && isConnected && step === 'select' && (
           <div className="space-y-4">
             {/* URL lookup section */}
             <div className="bg-theme-surface border border-theme-border rounded-xl p-4 space-y-3">
@@ -479,7 +464,7 @@ export function CreateMarketView() {
         )}
 
         {/* Commit step */}
-        {context?.user?.fid && isConnected && !isWrongChain && step === 'commit' && selectedCast && (
+        {context?.user?.fid && isConnected &&step === 'commit' && selectedCast && (
           <div className="space-y-6">
             {/* Selected cast */}
             <div className="bg-theme-surface border border-theme-border rounded-xl p-4">
@@ -608,7 +593,7 @@ export function CreateMarketView() {
         )}
 
         {/* Approve step */}
-        {context?.user?.fid && isConnected && !isWrongChain && step === 'approve' && (
+        {context?.user?.fid && isConnected &&step === 'approve' && (
           <div className="bg-theme-surface border border-theme-border rounded-xl p-6 text-center space-y-4">
             <div className="w-16 h-16 mx-auto">
               {isApproving || isApproveConfirming ? (
@@ -647,7 +632,7 @@ export function CreateMarketView() {
         )}
 
         {/* Create step */}
-        {context?.user?.fid && isConnected && !isWrongChain && step === 'create' && (
+        {context?.user?.fid && isConnected &&step === 'create' && (
           <div className="bg-theme-surface border border-theme-border rounded-xl p-6 text-center space-y-4">
             <div className="w-16 h-16 mx-auto">
               {isCreating || isCreateConfirming ? (
@@ -700,7 +685,7 @@ export function CreateMarketView() {
         )}
 
         {/* Success step */}
-        {context?.user?.fid && isConnected && !isWrongChain && step === 'success' && selectedCast && (
+        {context?.user?.fid && isConnected &&step === 'success' && selectedCast && (
           <div className="bg-theme-surface border border-theme-border rounded-xl p-6 space-y-6">
             <div className="text-center">
               <div className="w-16 h-16 mx-auto flex items-center justify-center text-theme-positive mb-4">

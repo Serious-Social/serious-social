@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useAccount, useConnect, useSwitchChain } from 'wagmi';
+import { useAccount, useConnect } from 'wagmi';
 import { useMiniApp } from '@neynar/react';
 import { useCommitFlow } from '~/hooks/useBeliefMarketWrite';
 import { FriendChallenger } from '~/components/ui/FriendChallenger';
@@ -24,9 +24,8 @@ interface CommitModalProps {
 type Step = 'input' | 'comment' | 'approve' | 'commit' | 'success';
 
 export function CommitModal({ isOpen, onClose, side, marketAddress, postId, castText, parentCastHash, lockPeriod, earlyWithdrawPenaltyBps, onSuccess }: CommitModalProps) {
-  const { isConnected, chain, address } = useAccount();
+  const { isConnected, address } = useAccount();
   const { connectors, connect } = useConnect();
-  const { switchChain } = useSwitchChain();
   const { context, actions } = useMiniApp();
 
   const [amount, setAmount] = useState('');
@@ -170,8 +169,6 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
     onClose();
   };
 
-  const isWrongChain = chain?.id !== DEFAULT_CHAIN_ID;
-
   const sideLabel = side === Side.Support ? 'Support' : 'Challenge';
   const lockPeriodStr = lockPeriod != null ? formatLockPeriod(lockPeriod) : '30 days';
 
@@ -214,21 +211,8 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
             </div>
           )}
 
-          {/* Wrong chain */}
-          {isConnected && isWrongChain && (
-            <div className="text-center space-y-4">
-              <p className="text-theme-text-muted">Please switch to Base</p>
-              <button
-                onClick={() => switchChain({ chainId: DEFAULT_CHAIN_ID })}
-                className="w-full py-3 px-4 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
-              >
-                Switch Network
-              </button>
-            </div>
-          )}
-
           {/* Input step */}
-          {isConnected && !isWrongChain && step === 'input' && (
+          {isConnected && step === 'input' && (
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-theme-text mb-2">
@@ -278,7 +262,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
           )}
 
           {/* Comment step */}
-          {isConnected && !isWrongChain && step === 'comment' && (
+          {isConnected &&step === 'comment' && (
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-theme-text mb-2">
@@ -330,7 +314,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
           )}
 
           {/* Approve step */}
-          {isConnected && !isWrongChain && step === 'approve' && (
+          {isConnected &&step === 'approve' && (
             <div className="text-center space-y-4">
               <div className="w-16 h-16 mx-auto">
                 {isApproving || isApproveConfirming ? (
@@ -380,7 +364,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
           )}
 
           {/* Commit step */}
-          {isConnected && !isWrongChain && step === 'commit' && (
+          {isConnected &&step === 'commit' && (
             <div className="text-center space-y-4">
               <div className="w-16 h-16 mx-auto">
                 {isCommitting || isCommitConfirming ? (
@@ -454,7 +438,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
           )}
 
           {/* Success step */}
-          {isConnected && !isWrongChain && step === 'success' && (
+          {isConnected &&step === 'success' && (
             <div className="text-center space-y-4">
               <div className="w-16 h-16 mx-auto flex items-center justify-center">
                 <div className="text-theme-positive">
