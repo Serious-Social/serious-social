@@ -114,12 +114,19 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching market data:', e);
   }
 
-  // Fetch cast content from Redis cache (avoids Neynar rate limits)
+  // Fetch cast content and author info from Redis cache (avoids Neynar rate limits)
   let castText = 'Claim not available';
+  let authorUsername = '';
+  let authorDisplayName = '';
+  let authorPfpUrl = '';
 
   try {
     const mapping = await getCastMapping(postId);
     if (mapping) {
+      authorUsername = mapping.authorUsername || '';
+      authorDisplayName = mapping.authorDisplayName || mapping.authorUsername || '';
+      authorPfpUrl = mapping.authorPfpUrl || '';
+
       // Use cached text from Redis if available
       if (mapping.text) {
         castText = mapping.text;
@@ -133,6 +140,9 @@ export async function GET(request: NextRequest) {
           });
           if (response.cast) {
             castText = response.cast.text;
+            authorUsername = authorUsername || response.cast.author.username;
+            authorDisplayName = authorDisplayName || response.cast.author.display_name || response.cast.author.username;
+            authorPfpUrl = authorPfpUrl || response.cast.author.pfp_url || '';
           }
         } catch (apiError) {
           // Neynar rate limited or unavailable - use fallback
@@ -144,8 +154,8 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching cast mapping:', e);
   }
 
-  // Truncate text if too long
-  const maxLength = 140;
+  // Truncate text if too long — allow more content to fill the space
+  const maxLength = 280;
   const displayText = castText.length > maxLength
     ? castText.slice(0, maxLength) + '...'
     : castText;
@@ -253,6 +263,45 @@ export async function GET(request: NextRequest) {
               &ldquo;{displayText}&rdquo;
             </p>
           </div>
+
+          {/* Author attribution */}
+          {authorUsername && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              marginBottom: marketExists ? '0' : '24px',
+            }}>
+              {authorPfpUrl ? (
+                <img
+                  src={authorPfpUrl}
+                  width={44}
+                  height={44}
+                  style={{
+                    borderRadius: '50%',
+                    border: `2px solid ${THEME.border}`,
+                  }}
+                />
+              ) : (
+                <div style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '50%',
+                  backgroundColor: THEME.surface,
+                  border: `2px solid ${THEME.border}`,
+                }} />
+              )}
+              <span style={{
+                color: THEME.textMuted,
+                fontSize: '24px',
+              }}>
+                {authorDisplayName || authorUsername}
+                <span style={{ color: THEME.border, marginLeft: '8px' }}>
+                  @{authorUsername}
+                </span>
+              </span>
+            </div>
+          )}
 
           {/* Bottom stats row */}
           {marketExists && (
