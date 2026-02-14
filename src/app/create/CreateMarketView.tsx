@@ -22,6 +22,7 @@ import {
   Side,
 } from '~/lib/contracts';
 import { ShareButton } from '~/components/ui/Share';
+import { APP_URL } from '~/lib/constants';
 
 interface Cast {
   hash: string;
@@ -40,13 +41,13 @@ interface Cast {
   replies: number;
 }
 
-type Step = 'select' | 'commit' | 'approve' | 'create' | 'success';
+type Step = 'select' | 'commit' | 'comment' | 'approve' | 'create' | 'success';
 
 export function CreateMarketView() {
   const router = useRouter();
   const { isConnected, address } = useAccount();
   const { connectors, connect } = useConnect();
-  const { context } = useMiniApp();
+  const { context, actions } = useMiniApp();
   const { data: defaultParams } = useDefaultParams();
 
   // Derive stake limits from contract params (fallback to hardcoded constants)
@@ -66,6 +67,7 @@ export function CreateMarketView() {
   const [amount, setAmount] = useState('10');
   const [step, setStep] = useState<Step>('select');
   const [selectedSide, setSelectedSide] = useState<Side>(Side.Support);
+  const [comment, setComment] = useState('');
 
   // URL lookup state
   const [castUrl, setCastUrl] = useState('');
@@ -187,30 +189,63 @@ export function CreateMarketView() {
     }
   }, [isApproveSuccess, step, refetchAllowance]);
 
-  // Handle create success - store mapping and show success
-  useEffect(() => {
-    if (isCreateSuccess && step === 'create' && selectedCast && postId) {
-      // Store the cast mapping for later retrieval
-      fetch('/api/cast-mapping', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          postId,
-          castHash: selectedCast.hash,
-          authorFid: selectedCast.author.fid,
-          text: selectedCast.text,
-          authorUsername: selectedCast.author.username,
-          authorDisplayName: selectedCast.author.displayName,
-          authorPfpUrl: selectedCast.author.pfpUrl,
-        }),
-      }).catch(err => {
-        console.error('Failed to store cast mapping:', err);
-      });
+  // Ref to prevent double-firing success handler
+  const successHandledRef = useRef(false);
 
-      refetchMarket();
-      setStep('success');
+  // Handle create success - store mapping, publish comment, show success
+  useEffect(() => {
+    if (isCreateSuccess && step === 'create' && selectedCast && postId && !successHandledRef.current) {
+      successHandledRef.current = true;
+      handleCreateSuccess();
     }
-  }, [isCreateSuccess, step, refetchMarket, selectedCast, postId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCreateSuccess, step, selectedCast, postId]);
+
+  async function handleCreateSuccess() {
+    if (!selectedCast || !postId) return;
+
+    // Store the cast mapping for later retrieval
+    fetch('/api/cast-mapping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        postId,
+        castHash: selectedCast.hash,
+        authorFid: selectedCast.author.fid,
+        text: selectedCast.text,
+        authorUsername: selectedCast.author.username,
+        authorDisplayName: selectedCast.author.displayName,
+        authorPfpUrl: selectedCast.author.pfpUrl,
+      }),
+    }).catch(err => {
+      console.error('Failed to store cast mapping:', err);
+    });
+
+    // Publish comment via Farcaster composer (for challenges with a comment)
+    if (comment.trim()) {
+      const sideVerb = selectedSide === Side.Support ? 'supported' : 'challenged';
+      const formattedAmount = formatUSDC(amountBigInt);
+      const baseUrl = APP_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+      const url = new URL(`${baseUrl}/market/${postId}`);
+      url.searchParams.set('t', Date.now().toString());
+      const marketUrl = url.toString();
+
+      const text = `${comment.trim()}\n\n[${sideVerb} with $${formattedAmount}]`;
+
+      try {
+        await actions.composeCast({
+          text,
+          embeds: [marketUrl] as [string],
+          parent: { type: 'cast' as const, hash: selectedCast.hash },
+        });
+      } catch (err) {
+        console.error('Cast composer dismissed or failed:', err);
+      }
+    }
+
+    refetchMarket();
+    setStep('success');
+  }
 
   const handleSelectCast = (cast: Cast) => {
     setSelectedCast(cast);
@@ -220,6 +255,8 @@ export function CreateMarketView() {
   const handleBack = () => {
     setSelectedCast(null);
     setSelectedSide(Side.Support);
+    setComment('');
+    successHandledRef.current = false;
     setStep('select');
     resetApprove();
     resetCreate();
@@ -271,14 +308,35 @@ export function CreateMarketView() {
     }
   };
 
+  const isOwnCast = selectedCast?.author.fid === context?.user?.fid;
+
+  // Require comment when challenging someone else's cast
+  const requiresComment = !isOwnCast && selectedSide === Side.Oppose;
+
   const handleProceed = async () => {
+    if (!postId || !isValidAmount) return;
+
+    // Route through comment step when challenging someone else's cast
+    if (requiresComment) {
+      setStep('comment');
+      return;
+    }
+
+    await startTransaction();
+  };
+
+  const handleCommentProceed = async () => {
+    if (requiresComment && !comment.trim()) return;
+    await startTransaction();
+  };
+
+  const startTransaction = async () => {
     if (!postId || !isValidAmount) return;
 
     if (needsApproval(amountBigInt)) {
       setStep('approve');
       try {
         await approveUSDC(vaultAddress, maxUint256);
-        // Success will be handled by the useEffect
       } catch (err) {
         console.error('Approval failed:', err);
       }
@@ -286,7 +344,6 @@ export function CreateMarketView() {
       setStep('create');
       try {
         await createMarketTx(postId, amountBigInt, selectedSide);
-        // Success will be handled by the useEffect
       } catch (err) {
         console.error('Create market failed:', err);
       }
@@ -309,7 +366,6 @@ export function CreateMarketView() {
     }
   };
 
-  const isOwnCast = selectedCast?.author.fid === context?.user?.fid;
   const canProceed = selectedCast && isValidAmount && hasBalance(amountBigInt) && !marketExists;
 
   return (
@@ -589,6 +645,56 @@ export function CreateMarketView() {
                 </button>
               </>
             )}
+          </div>
+        )}
+
+        {/* Comment step (required for challenges) */}
+        {context?.user?.fid && isConnected && step === 'comment' && selectedCast && (
+          <div className="space-y-4">
+            <div className="bg-theme-surface border border-theme-border rounded-xl p-4">
+              <p className="text-xs text-theme-text-muted mb-2">Challenging @{selectedCast.author.username}&apos;s claim</p>
+              <p className="text-sm text-theme-text line-clamp-3">{selectedCast.text}</p>
+            </div>
+
+            <div className="bg-theme-surface border border-theme-border rounded-xl p-4 space-y-3">
+              <label className="block text-sm font-medium text-theme-text">
+                Why are you challenging this? (required)
+              </label>
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Explain why you disagree..."
+                maxLength={500}
+                rows={3}
+                className="w-full px-4 py-3 border border-theme-border bg-theme-bg rounded-xl focus:ring-2 focus:ring-theme-primary focus:border-transparent outline-none text-theme-text placeholder-theme-text-muted resize-none text-sm"
+              />
+              <p className="text-xs text-theme-text-muted text-right">
+                {comment.length}/500
+              </p>
+            </div>
+
+            <div className="bg-theme-bg border border-theme-border rounded-lg p-3 text-sm text-theme-text-muted">
+              <p>
+                Challenging with <strong className="text-theme-text">${formatUSDC(amountBigInt)}</strong>
+                {' '}&mdash; locked {defaultParams ? formatLockPeriod(defaultParams.lockPeriod) : '30 days'}
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setStep('commit')}
+                className="flex-1 py-3 bg-theme-surface border border-theme-border hover:bg-theme-border rounded-xl text-theme-text font-medium transition-colors"
+              >
+                Back
+              </button>
+              <button
+                onClick={handleCommentProceed}
+                disabled={!comment.trim()}
+                className="flex-1 py-3 bg-gradient-primary hover:opacity-90 disabled:bg-theme-border disabled:cursor-not-allowed rounded-xl text-white font-medium transition-colors"
+              >
+                {needsApproval(amountBigInt) ? 'Approve & Create' : 'Create Market'}
+              </button>
+            </div>
           </div>
         )}
 
