@@ -204,6 +204,10 @@ export function CreateMarketView() {
   async function handleCreateSuccess() {
     if (!selectedCast || !postId) return;
 
+    const sideStr = selectedSide === Side.Support ? 'support' : 'challenge';
+    const formattedAmount = formatUSDC(amountBigInt);
+    let publishedCastHash: string | undefined;
+
     // Store the cast mapping for later retrieval
     fetch('/api/cast-mapping', {
       method: 'POST',
@@ -224,7 +228,6 @@ export function CreateMarketView() {
     // Publish comment via Farcaster composer (for challenges with a comment)
     if (comment.trim()) {
       const sideVerb = selectedSide === Side.Support ? 'supported' : 'challenged';
-      const formattedAmount = formatUSDC(amountBigInt);
       const baseUrl = APP_URL || (typeof window !== 'undefined' ? window.location.origin : '');
       const url = new URL(`${baseUrl}/market/${postId}`);
       url.searchParams.set('t', Date.now().toString());
@@ -233,14 +236,37 @@ export function CreateMarketView() {
       const text = `${comment.trim()}\n\n[${sideVerb} with $${formattedAmount}]`;
 
       try {
-        await actions.composeCast({
+        const result = await actions.composeCast({
           text,
           embeds: [marketUrl] as [string],
           parent: { type: 'cast' as const, hash: selectedCast.hash },
         });
+        publishedCastHash = result?.cast?.hash;
       } catch (err) {
         console.error('Cast composer dismissed or failed:', err);
       }
+    }
+
+    // Fire-and-forget: notify + record participant
+    fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: sideStr, postId, amount: formattedAmount }),
+    }).catch((err) => console.error('Failed to send notification:', err));
+
+    if (context?.user?.fid) {
+      fetch('/api/market-participants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          postId,
+          fid: context.user.fid,
+          side: sideStr,
+          amount: formattedAmount,
+          comment: comment.trim() || undefined,
+          commentCastHash: publishedCastHash,
+        }),
+      }).catch((err) => console.error('Failed to record participant:', err));
     }
 
     refetchMarket();
