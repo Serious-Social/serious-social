@@ -155,7 +155,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Truncate text if too long — allow more content to fill the space
-  const maxLength = 280;
+  const maxLength = 400;
   const displayText = castText.length > maxLength
     ? castText.slice(0, maxLength) + '...'
     : castText;
@@ -170,6 +170,11 @@ export async function GET(request: NextRequest) {
   const stakedDisplay = totalStaked >= 1000
     ? `$${(totalStaked / 1000).toFixed(1)}k`
     : `$${totalStaked.toFixed(0)}`;
+
+  const rewardPool = state ? Number(state.srpBalance) / 1_000_000 : 0;
+  const rewardDisplay = rewardPool >= 1000
+    ? `$${(rewardPool / 1000).toFixed(1)}k`
+    : `$${rewardPool.toFixed(rewardPool < 1 && rewardPool > 0 ? 2 : 0)}`;
 
   return new ImageResponse(
     (
@@ -329,6 +334,24 @@ export async function GET(request: NextRequest) {
                   marginTop: '8px',
                 }}>
                   STAKED
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{
+                  color: THEME.accent,
+                  fontSize: '48px',
+                  fontWeight: 700,
+                  lineHeight: 1,
+                }}>
+                  {rewardDisplay}
+                </span>
+                <span style={{
+                  color: THEME.textMuted,
+                  fontSize: '16px',
+                  letterSpacing: '1px',
+                  marginTop: '8px',
+                }}>
+                  REWARDS
                 </span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
