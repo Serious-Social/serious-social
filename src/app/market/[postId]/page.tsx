@@ -8,14 +8,15 @@ import { getMiniAppEmbedMetadata } from '~/lib/utils';
 
 interface PageProps {
   params: Promise<{ postId: string }>;
-  searchParams: Promise<{ intent?: string }>;
+  searchParams: Promise<{ intent?: string; t?: string }>;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
   const { postId } = await params;
+  const { t } = await searchParams;
 
-  // Dynamic OG image URL for this market
-  const ogImageUrl = `${APP_URL}/api/og/market?postId=${postId}`;
+  // Dynamic OG image URL for this market (cache-bust with t param so each share gets a fresh image)
+  const ogImageUrl = `${APP_URL}/api/og/market?postId=${postId}${t ? `&t=${t}` : ''}`;
   const marketUrl = `${APP_URL}/market/${postId}`;
 
   // Try to get the cast text for a better description
