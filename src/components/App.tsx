@@ -17,6 +17,15 @@ export default function App() {
     }
   }, [isSDKLoaded]);
 
+  // Prompt users to add the mini app (enables notifications)
+  useEffect(() => {
+    if (isSDKLoaded && context && !context.client.added) {
+      sdk.actions.addFrame().catch(() => {
+        // User rejected or domain manifest invalid — ignore
+      });
+    }
+  }, [isSDKLoaded, context]);
+
   if (!isSDKLoaded) {
     return (
       <div className="flex items-center justify-center h-screen bg-theme-bg">
