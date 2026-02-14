@@ -42,3 +42,7 @@ next-env.d.ts
 
 # playwright
 .playwright*
+
+# simulation
+simulation/wallets/wallets.json
+simulation/logs/
