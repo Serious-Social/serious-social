@@ -5,8 +5,8 @@ import { base, baseSepolia } from 'wagmi/chains';
 
 export const CONTRACTS = {
   [base.id]: {
-    factory: '0x0000000000000000000000000000000000000000' as `0x${string}`, // TODO: Deploy to mainnet
-    vault: '0x0000000000000000000000000000000000000000' as `0x${string}`, // TODO: Deploy to mainnet
+    factory: '0x03ced67957579fa1657d448d810320b89b19558e' as `0x${string}`,
+    vault: '0xb42dfd13a1f84caecdd6636009554499649abe4e' as `0x${string}`,
     usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as `0x${string}`, // USDC on Base
   },
   [baseSepolia.id]: {
@@ -17,13 +17,13 @@ export const CONTRACTS = {
 } as const;
 
 // Default chain for development
-export const DEFAULT_CHAIN_ID = baseSepolia.id;
+export const DEFAULT_CHAIN_ID = base.id;
 
 // Stake limits (in USDC, 6 decimals)
 export const MIN_STAKE = 5_000_000n; // $5 USDC
-export const MAX_STAKE = 100_000_000n; // $100 USDC
+export const MAX_STAKE = 1_000_000_000n; // $1000 USDC
 export const MIN_STAKE_DISPLAY = 5;
-export const MAX_STAKE_DISPLAY = 100;
+export const MAX_STAKE_DISPLAY = 1000;
 
 export const BELIEF_FACTORY_ABI = [
   {

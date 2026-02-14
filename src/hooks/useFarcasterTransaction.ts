@@ -5,7 +5,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { sdk } from '@farcaster/miniapp-sdk';
 import { encodeFunctionData, createPublicClient, http, type Hash } from 'viem';
-import { baseSepolia } from 'viem/chains';
+import { base } from 'viem/chains';
 import {
   CONTRACTS,
   BELIEF_FACTORY_ABI,
@@ -21,7 +21,7 @@ const WALLET_PROMPT_TIMEOUT = 30_000;
 
 // Public client for reading transaction receipts
 const publicClient = createPublicClient({
-  chain: baseSepolia,
+  chain: base,
   transport: http(),
 });
 
@@ -100,7 +100,7 @@ export function useFarcasterTransaction() {
       } catch (switchError) {
         console.warn('[useFarcasterTransaction] Chain switch failed:', switchError);
         throw new Error(
-          `Your wallet does not support Base Sepolia (chain ${DEFAULT_CHAIN_ID}). ` +
+          `Your wallet does not support Base (chain ${DEFAULT_CHAIN_ID}). ` +
           `Transactions require a wallet that supports this network.`
         );
       }

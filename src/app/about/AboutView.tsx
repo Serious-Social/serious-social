@@ -3,12 +3,8 @@
 import Link from "next/link";
 import { CONTRACTS, DEFAULT_CHAIN_ID, formatBps, formatLockPeriod } from "~/lib/contracts";
 import { useDefaultParams } from "~/hooks/useBeliefMarket";
-import { baseSepolia } from "wagmi/chains";
-
 const chainId = DEFAULT_CHAIN_ID;
-const explorerUrl = chainId === baseSepolia.id
-  ? "https://sepolia.basescan.org"
-  : "https://basescan.org";
+const explorerUrl = "https://basescan.org";
 
 export function AboutView() {
   const { data: defaultParams } = useDefaultParams();

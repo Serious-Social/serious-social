@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import { createPublicClient, http } from 'viem';
-import { baseSepolia } from 'viem/chains';
+import { base } from 'viem/chains';
 import { getCastMapping } from "~/lib/kv";
 import { getNeynarClient } from "~/lib/neynar";
 import {
@@ -29,7 +29,7 @@ const THEME = {
 };
 
 const publicClient = createPublicClient({
-  chain: baseSepolia,
+  chain: base,
   transport: http(),
 });
 
