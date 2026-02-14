@@ -217,7 +217,7 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
           {/* Wrong chain */}
           {isConnected && isWrongChain && (
             <div className="text-center space-y-4">
-              <p className="text-theme-text-muted">Please switch to Base Sepolia</p>
+              <p className="text-theme-text-muted">Please switch to Base</p>
               <button
                 onClick={() => switchChain({ chainId: DEFAULT_CHAIN_ID })}
                 className="w-full py-3 px-4 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"

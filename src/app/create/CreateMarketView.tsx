@@ -370,7 +370,7 @@ export function CreateMarketView() {
         {/* Wrong chain */}
         {context?.user?.fid && isConnected && isWrongChain && (
           <div className="bg-theme-surface border border-theme-border rounded-xl p-6 text-center space-y-4">
-            <p className="text-theme-text-muted">Please switch to Base Sepolia</p>
+            <p className="text-theme-text-muted">Please switch to Base</p>
             <button
               onClick={() => switchChain({ chainId: DEFAULT_CHAIN_ID })}
               className="w-full py-3 px-4 bg-gradient-primary hover:opacity-90 rounded-xl text-white font-medium transition-colors"
