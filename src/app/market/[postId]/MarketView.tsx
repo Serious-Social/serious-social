@@ -433,11 +433,12 @@ export function MarketView({ postId, intent }: MarketViewProps) {
               <h2 className="text-sm font-bold text-theme-text mb-3">How Belief Markets Work</h2>
               <div className="space-y-3 pb-6">
                 {[
-                  { n: '01', title: 'Pick a Side', desc: `Commit USDC to Support or Challenge. Locked for ${marketParams ? formatLockPeriod(marketParams.lockPeriod) : '30 days'}.` },
-                  { n: '02', title: 'Hold = Stronger Signal', desc: 'The longer you hold, the more your conviction counts. Early believers earn most.' },
-                  { n: '03', title: 'Earn from the Pool', desc: `Rewards come from a shared pool. Leave early = ${marketParams ? formatBps(marketParams.earlyWithdrawPenaltyBps) : '5%'} penalty. Stay the full term = full principal back.` },
-                ].map((step, i) => (
-                  <div key={step.n} className={`flex gap-3 py-3 ${i < 2 ? 'border-b border-theme-border/40' : ''}`}>
+                  { n: '01', title: 'Pick a Side', desc: `Commit USDC to Support or Challenge. Your principal is locked for ${marketParams ? formatLockPeriod(marketParams.lockPeriod) : '30 days'}.` },
+                  { n: '02', title: 'Hold = Stronger Signal', desc: 'Your reward share grows the longer you hold. A $50 stake held 20 days earns the same as $100 held 10 days. Early believers earn most.' },
+                  { n: '03', title: 'Shared Reward Pool', desc: `Both sides earn from the same pool. Rewards are based on stake size and time held, not which side you pick. The pool is funded by the creator premium${marketParams ? ` (${formatBps(marketParams.authorPremiumBps)})` : ''}, late entry fees, and early withdrawal penalties.` },
+                  { n: '04', title: 'Withdraw', desc: `After the lock period, withdraw your full principal + earned rewards. Leave early and you pay a ${marketParams ? formatBps(marketParams.earlyWithdrawPenaltyBps) : '15%'} penalty on your principal and forfeit all pending rewards.` },
+                ].map((step, i, arr) => (
+                  <div key={step.n} className={`flex gap-3 py-3 ${i < arr.length - 1 ? 'border-b border-theme-border/40' : ''}`}>
                     <span className="text-[10px] font-bold text-theme-primary min-w-[18px]">{step.n}</span>
                     <div>
                       <div className="text-xs font-bold text-theme-text mb-0.5">{step.title}</div>
