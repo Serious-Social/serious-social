@@ -464,6 +464,8 @@ export function MarketView({ postId, intent }: MarketViewProps) {
           parentCastHash={parentCastHash}
           lockPeriod={marketParams?.lockPeriod}
           earlyWithdrawPenaltyBps={marketParams?.earlyWithdrawPenaltyBps}
+          minStake={marketParams?.minStake}
+          maxStake={marketParams?.maxStake}
           onSuccess={handleCommitSuccess}
         />
       )}

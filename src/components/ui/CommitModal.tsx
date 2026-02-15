@@ -5,7 +5,7 @@ import { useAccount, useConnect } from 'wagmi';
 import { useMiniApp } from '@neynar/react';
 import { useCommitFlow } from '~/hooks/useBeliefMarketWrite';
 import { FriendChallenger } from '~/components/ui/FriendChallenger';
-import { Side, formatUSDC, parseUSDC, formatBps, formatLockPeriod, DEFAULT_CHAIN_ID, CONTRACTS } from '~/lib/contracts';
+import { Side, formatUSDC, parseUSDC, formatBps, formatLockPeriod, DEFAULT_CHAIN_ID, CONTRACTS, MIN_STAKE, MAX_STAKE } from '~/lib/contracts';
 import { APP_URL } from '~/lib/constants';
 
 interface CommitModalProps {
@@ -18,12 +18,14 @@ interface CommitModalProps {
   parentCastHash?: string;
   lockPeriod?: number;
   earlyWithdrawPenaltyBps?: number;
+  minStake?: bigint;
+  maxStake?: bigint;
   onSuccess?: () => void;
 }
 
 type Step = 'input' | 'comment' | 'approve' | 'commit' | 'success';
 
-export function CommitModal({ isOpen, onClose, side, marketAddress, postId, castText, parentCastHash, lockPeriod, earlyWithdrawPenaltyBps, onSuccess }: CommitModalProps) {
+export function CommitModal({ isOpen, onClose, side, marketAddress, postId, castText, parentCastHash, lockPeriod, earlyWithdrawPenaltyBps, minStake: minStakeProp, maxStake: maxStakeProp, onSuccess }: CommitModalProps) {
   const { isConnected, address } = useAccount();
   const { connectors, connect } = useConnect();
   const { context, actions } = useMiniApp();
@@ -36,7 +38,12 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
   const successHandledRef = useRef(false);
 
   const amountBigInt = parseUSDC(amount);
-  const isValidAmount = amountBigInt > 0n;
+  const minStake = minStakeProp ?? MIN_STAKE;
+  const maxStake = maxStakeProp ?? MAX_STAKE;
+  const minStakeDisplay = Number(minStake) / 1e6;
+  const maxStakeDisplay = Number(maxStake) / 1e6;
+  const amountNum = parseFloat(amount) || 0;
+  const isValidAmount = amountBigInt >= minStake && amountBigInt <= maxStake;
 
   const {
     allowance,
@@ -222,20 +229,26 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
                     type="number"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    placeholder="0.00"
-                    min="0"
+                    placeholder={`${minStakeDisplay}.00`}
+                    min={minStakeDisplay}
+                    max={maxStakeDisplay}
                     step="0.01"
                     className="w-full pl-8 pr-4 py-3 border border-theme-border bg-theme-bg rounded-xl focus:ring-2 focus:ring-theme-primary focus:border-transparent outline-none text-theme-text placeholder-theme-text-muted"
                   />
                 </div>
-                {balance !== undefined && (
-                  <p className="text-sm text-theme-text-muted mt-1">
-                    Balance: ${formatUSDC(balance)}
-                  </p>
-                )}
+                <p className="text-xs text-theme-text-muted mt-1">
+                  Min ${minStakeDisplay}, Max ${maxStakeDisplay}
+                  {balance !== undefined && <> · Balance: ${formatUSDC(balance)}</>}
+                </p>
               </div>
 
-              {/* Warning if insufficient balance */}
+              {/* Validation messages */}
+              {amountNum > 0 && amountNum < minStakeDisplay && (
+                <p className="text-sm text-red-500">Minimum commitment is ${minStakeDisplay}</p>
+              )}
+              {amountNum > maxStakeDisplay && (
+                <p className="text-sm text-red-500">Maximum commitment is ${maxStakeDisplay}</p>
+              )}
               {isValidAmount && !hasBalance(amountBigInt) && (
                 <p className="text-sm text-red-500">Insufficient USDC balance</p>
               )}
