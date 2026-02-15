@@ -132,95 +132,110 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch on-chain data for each market in parallel
-    const markets = await Promise.all(
-      validMappings.map(async ({ postId, mapping }): Promise<MarketData | null> => {
-        try {
-          let marketAddress: string | null = null;
-          let exists = false;
-          let state = null;
+    // Batch-fetch market addresses via multicall (1 RPC call instead of N)
+    const addressResults = await publicClient.multicall({
+      contracts: validMappings.map(({ postId }) => ({
+        address: CONTRACTS[DEFAULT_CHAIN_ID].factory,
+        abi: BELIEF_FACTORY_ABI,
+        functionName: 'getMarket' as const,
+        args: [postId as `0x${string}`],
+      })),
+      allowFailure: true,
+    });
 
-          try {
-            const address = await publicClient.readContract({
-              address: CONTRACTS[DEFAULT_CHAIN_ID].factory,
-              abi: BELIEF_FACTORY_ABI,
-              functionName: 'getMarket',
-              args: [postId as `0x${string}`],
-            }) as `0x${string}`;
+    // Build address map and collect valid markets for state fetch
+    const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+    const marketAddresses = new Map<string, `0x${string}`>();
+    const stateContracts: { address: `0x${string}`; abi: typeof BELIEF_MARKET_ABI; functionName: 'getMarketState' }[] = [];
+    const statePostIds: string[] = [];
 
-            if (address && address !== '0x0000000000000000000000000000000000000000') {
-              marketAddress = address;
-              exists = true;
-
-              // Fetch market state
-              const marketState = await publicClient.readContract({
-                address: address,
-                abi: BELIEF_MARKET_ABI,
-                functionName: 'getMarketState',
-              }) as {
-                belief: bigint;
-                supportWeight: bigint;
-                opposeWeight: bigint;
-                supportPrincipal: bigint;
-                opposePrincipal: bigint;
-              };
-
-              state = {
-                belief: marketState.belief.toString(),
-                supportPrincipal: marketState.supportPrincipal.toString(),
-                opposePrincipal: marketState.opposePrincipal.toString(),
-                supportWeight: marketState.supportWeight.toString(),
-                opposeWeight: marketState.opposeWeight.toString(),
-              };
-            }
-          } catch (e) {
-            // Market might not exist yet, that's okay
-          }
-
-          // Compute 24h belief change
-          let beliefChange24h: number | null = null;
-          if (state) {
-            const snapshots = snapshotsMap.get(postId);
-            if (snapshots && snapshots.length > 0) {
-              const now = Math.floor(Date.now() / 1000);
-              const target = now - 24 * 60 * 60;
-              // Find entry closest to 24h ago
-              let closest = snapshots[0];
-              let closestDiff = Math.abs(closest.ts - target);
-              for (const entry of snapshots) {
-                const diff = Math.abs(entry.ts - target);
-                if (diff < closestDiff) {
-                  closest = entry;
-                  closestDiff = diff;
-                }
-              }
-              // Only show delta if the snapshot is at least 1h old
-              if (now - closest.ts >= 3600) {
-                const currentBelief = Number(BigInt(state.belief) * 10000n / BigInt(1e18)) / 100;
-                const snapshotBelief = Number(BigInt(closest.belief) * 10000n / BigInt(1e18)) / 100;
-                beliefChange24h = Math.round((currentBelief - snapshotBelief) * 10) / 10;
-              }
-            }
-          }
-
-          return {
-            postId,
-            marketAddress,
-            exists,
-            cast: castMap.get(mapping.castHash) ?? null,
-            state,
-            createdAt: mapping.createdAt,
-            beliefChange24h,
-          };
-        } catch (e) {
-          console.error(`Error fetching market ${postId}:`, e);
-          return null;
+    for (let i = 0; i < validMappings.length; i++) {
+      const result = addressResults[i];
+      if (result.status === 'success') {
+        const address = result.result as `0x${string}`;
+        if (address && address !== ZERO_ADDRESS) {
+          marketAddresses.set(validMappings[i].postId, address);
+          stateContracts.push({
+            address,
+            abi: BELIEF_MARKET_ABI,
+            functionName: 'getMarketState',
+          });
+          statePostIds.push(validMappings[i].postId);
         }
-      })
-    );
+      }
+    }
 
-    // Filter out null results
-    const validMarkets = markets.filter((m): m is MarketData => m !== null);
+    // Batch-fetch market states via multicall (1 RPC call instead of N)
+    const stateMap = new Map<string, MarketData['state']>();
+    if (stateContracts.length > 0) {
+      const stateResults = await publicClient.multicall({
+        contracts: stateContracts,
+        allowFailure: true,
+      });
+
+      for (let i = 0; i < stateResults.length; i++) {
+        const result = stateResults[i];
+        if (result.status === 'success') {
+          const ms = result.result as {
+            belief: bigint;
+            supportWeight: bigint;
+            opposeWeight: bigint;
+            supportPrincipal: bigint;
+            opposePrincipal: bigint;
+          };
+          stateMap.set(statePostIds[i], {
+            belief: ms.belief.toString(),
+            supportPrincipal: ms.supportPrincipal.toString(),
+            opposePrincipal: ms.opposePrincipal.toString(),
+            supportWeight: ms.supportWeight.toString(),
+            opposeWeight: ms.opposeWeight.toString(),
+          });
+        }
+      }
+    }
+
+    // Assemble final market data
+    const markets: MarketData[] = validMappings.map(({ postId, mapping }) => {
+      const address = marketAddresses.get(postId);
+      const state = stateMap.get(postId) ?? null;
+      const exists = !!address;
+
+      // Compute 24h belief change
+      let beliefChange24h: number | null = null;
+      if (state) {
+        const snapshots = snapshotsMap.get(postId);
+        if (snapshots && snapshots.length > 0) {
+          const now = Math.floor(Date.now() / 1000);
+          const target = now - 24 * 60 * 60;
+          let closest = snapshots[0];
+          let closestDiff = Math.abs(closest.ts - target);
+          for (const entry of snapshots) {
+            const diff = Math.abs(entry.ts - target);
+            if (diff < closestDiff) {
+              closest = entry;
+              closestDiff = diff;
+            }
+          }
+          if (now - closest.ts >= 3600) {
+            const currentBelief = Number(BigInt(state.belief) * 10000n / BigInt(1e18)) / 100;
+            const snapshotBelief = Number(BigInt(closest.belief) * 10000n / BigInt(1e18)) / 100;
+            beliefChange24h = Math.round((currentBelief - snapshotBelief) * 10) / 10;
+          }
+        }
+      }
+
+      return {
+        postId,
+        marketAddress: address ?? null,
+        exists,
+        cast: castMap.get(mapping.castHash) ?? null,
+        state,
+        createdAt: mapping.createdAt,
+        beliefChange24h,
+      };
+    });
+
+    const validMarkets = markets.filter((m) => m !== null);
 
     return NextResponse.json({ markets: validMarkets });
   } catch (error) {

@@ -32,43 +32,64 @@ export async function GET(request: NextRequest) {
 
     let snapshotted = 0;
     const now = Math.floor(Date.now() / 1000);
+    const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-    await Promise.all(
-      postIds.map(async (postId) => {
-        try {
-          // Get market address
-          const address = (await publicClient.readContract({
-            address: CONTRACTS[DEFAULT_CHAIN_ID].factory,
-            abi: BELIEF_FACTORY_ABI,
-            functionName: 'getMarket',
-            args: [postId as `0x${string}`],
-          })) as `0x${string}`;
+    // Batch-fetch all market addresses via multicall
+    const addressResults = await publicClient.multicall({
+      contracts: postIds.map((postId) => ({
+        address: CONTRACTS[DEFAULT_CHAIN_ID].factory,
+        abi: BELIEF_FACTORY_ABI,
+        functionName: 'getMarket' as const,
+        args: [postId as `0x${string}`],
+      })),
+      allowFailure: true,
+    });
 
-          if (!address || address === '0x0000000000000000000000000000000000000000') {
-            return;
-          }
-
-          // Get current market state
-          const marketState = (await publicClient.readContract({
-            address,
-            abi: BELIEF_MARKET_ABI,
-            functionName: 'getMarketState',
-          })) as { belief: bigint };
-
-          // Read existing snapshots, prepend new entry, trim
-          const existing = await getBeliefSnapshot(postId);
-          const updated = [
-            { belief: marketState.belief.toString(), ts: now },
-            ...existing,
-          ];
-
-          await setBeliefSnapshot(postId, updated);
-          snapshotted++;
-        } catch (e) {
-          console.error(`Failed to snapshot belief for ${postId}:`, e);
+    // Collect valid markets for state fetch
+    const validMarkets: { postId: string; address: `0x${string}` }[] = [];
+    for (let i = 0; i < postIds.length; i++) {
+      const result = addressResults[i];
+      if (result.status === 'success') {
+        const address = result.result as `0x${string}`;
+        if (address && address !== ZERO_ADDRESS) {
+          validMarkets.push({ postId: postIds[i], address });
         }
-      })
-    );
+      }
+    }
+
+    // Batch-fetch all market states via multicall
+    if (validMarkets.length > 0) {
+      const stateResults = await publicClient.multicall({
+        contracts: validMarkets.map(({ address }) => ({
+          address,
+          abi: BELIEF_MARKET_ABI,
+          functionName: 'getMarketState' as const,
+        })),
+        allowFailure: true,
+      });
+
+      // Store snapshots
+      await Promise.all(
+        validMarkets.map(async ({ postId }, i) => {
+          try {
+            const result = stateResults[i];
+            if (result.status !== 'success') return;
+
+            const marketState = result.result as { belief: bigint };
+            const existing = await getBeliefSnapshot(postId);
+            const updated = [
+              { belief: marketState.belief.toString(), ts: now },
+              ...existing,
+            ];
+
+            await setBeliefSnapshot(postId, updated);
+            snapshotted++;
+          } catch (e) {
+            console.error(`Failed to snapshot belief for ${postId}:`, e);
+          }
+        })
+      );
+    }
 
     return NextResponse.json({ success: true, snapshotted });
   } catch (error) {

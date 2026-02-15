@@ -161,67 +161,83 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch on-chain data for matching markets
-    const markets = await Promise.all(
-      matchedMappings.map(async ({ postId, mapping }): Promise<MarketData | null> => {
-        try {
-          let marketAddress: string | null = null;
-          let exists = false;
-          let state = null;
+    // Batch-fetch market addresses via multicall (1 RPC call instead of N)
+    const addressResults = await publicClient.multicall({
+      contracts: matchedMappings.map(({ postId }) => ({
+        address: CONTRACTS[DEFAULT_CHAIN_ID].factory,
+        abi: BELIEF_FACTORY_ABI,
+        functionName: 'getMarket' as const,
+        args: [postId as `0x${string}`],
+      })),
+      allowFailure: true,
+    });
 
-          try {
-            const address = await publicClient.readContract({
-              address: CONTRACTS[DEFAULT_CHAIN_ID].factory,
-              abi: BELIEF_FACTORY_ABI,
-              functionName: 'getMarket',
-              args: [postId as `0x${string}`],
-            }) as `0x${string}`;
+    const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+    const marketAddresses = new Map<string, `0x${string}`>();
+    const stateContracts: { address: `0x${string}`; abi: typeof BELIEF_MARKET_ABI; functionName: 'getMarketState' }[] = [];
+    const statePostIds: string[] = [];
 
-            if (address && address !== '0x0000000000000000000000000000000000000000') {
-              marketAddress = address;
-              exists = true;
-
-              const marketState = await publicClient.readContract({
-                address: address,
-                abi: BELIEF_MARKET_ABI,
-                functionName: 'getMarketState',
-              }) as {
-                belief: bigint;
-                supportWeight: bigint;
-                opposeWeight: bigint;
-                supportPrincipal: bigint;
-                opposePrincipal: bigint;
-              };
-
-              state = {
-                belief: marketState.belief.toString(),
-                supportPrincipal: marketState.supportPrincipal.toString(),
-                opposePrincipal: marketState.opposePrincipal.toString(),
-                supportWeight: marketState.supportWeight.toString(),
-                opposeWeight: marketState.opposeWeight.toString(),
-              };
-            }
-          } catch {
-            // Market might not exist yet
-          }
-
-          return {
-            postId,
-            marketAddress,
-            exists,
-            cast: castMap.get(mapping.castHash) ?? null,
-            state,
-            createdAt: mapping.createdAt,
-            beliefChange24h: null,
-          };
-        } catch (e) {
-          console.error(`Error fetching market ${postId}:`, e);
-          return null;
+    for (let i = 0; i < matchedMappings.length; i++) {
+      const result = addressResults[i];
+      if (result.status === 'success') {
+        const address = result.result as `0x${string}`;
+        if (address && address !== ZERO_ADDRESS) {
+          marketAddresses.set(matchedMappings[i].postId, address);
+          stateContracts.push({
+            address,
+            abi: BELIEF_MARKET_ABI,
+            functionName: 'getMarketState',
+          });
+          statePostIds.push(matchedMappings[i].postId);
         }
-      })
-    );
+      }
+    }
 
-    const validMarkets = markets.filter((m): m is MarketData => m !== null);
+    // Batch-fetch market states via multicall (1 RPC call instead of N)
+    const stateMap = new Map<string, MarketData['state']>();
+    if (stateContracts.length > 0) {
+      const stateResults = await publicClient.multicall({
+        contracts: stateContracts,
+        allowFailure: true,
+      });
+
+      for (let i = 0; i < stateResults.length; i++) {
+        const result = stateResults[i];
+        if (result.status === 'success') {
+          const ms = result.result as {
+            belief: bigint;
+            supportWeight: bigint;
+            opposeWeight: bigint;
+            supportPrincipal: bigint;
+            opposePrincipal: bigint;
+          };
+          stateMap.set(statePostIds[i], {
+            belief: ms.belief.toString(),
+            supportPrincipal: ms.supportPrincipal.toString(),
+            opposePrincipal: ms.opposePrincipal.toString(),
+            supportWeight: ms.supportWeight.toString(),
+            opposeWeight: ms.opposeWeight.toString(),
+          });
+        }
+      }
+    }
+
+    // Assemble final market data
+    const markets: MarketData[] = matchedMappings.map(({ postId, mapping }) => {
+      const address = marketAddresses.get(postId);
+      const state = stateMap.get(postId) ?? null;
+      return {
+        postId,
+        marketAddress: address ?? null,
+        exists: !!address,
+        cast: castMap.get(mapping.castHash) ?? null,
+        state,
+        createdAt: mapping.createdAt,
+        beliefChange24h: null,
+      };
+    });
+
+    const validMarkets = markets.filter((m) => m !== null);
 
     return NextResponse.json({ markets: validMarkets });
   } catch (error) {
