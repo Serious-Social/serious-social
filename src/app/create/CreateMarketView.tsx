@@ -51,7 +51,10 @@ export function CreateMarketView() {
   const { data: defaultParams } = useDefaultParams();
 
   // Derive stake limits from contract params (fallback to hardcoded constants)
-  const minStake = defaultParams?.minStake ?? MIN_STAKE;
+  // Market creators have a higher minimum ($50) than regular commitments
+  const CREATOR_MIN_STAKE = 50_000_000n; // $50 USDC
+  const contractMinStake = defaultParams?.minStake ?? MIN_STAKE;
+  const minStake = contractMinStake > CREATOR_MIN_STAKE ? contractMinStake : CREATOR_MIN_STAKE;
   const maxStake = defaultParams?.maxStake ?? MAX_STAKE;
   const minStakeDisplay = Number(minStake) / 1e6;
   const maxStakeDisplay = Number(maxStake) / 1e6;
@@ -64,7 +67,7 @@ export function CreateMarketView() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const [selectedCast, setSelectedCast] = useState<Cast | null>(null);
-  const [amount, setAmount] = useState('10');
+  const [amount, setAmount] = useState('50');
   const [step, setStep] = useState<Step>('select');
   const [selectedSide, setSelectedSide] = useState<Side>(Side.Support);
   const [comment, setComment] = useState('');
