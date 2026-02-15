@@ -82,9 +82,30 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
     const sideStr = side === Side.Support ? 'support' : 'challenge';
     const sideVerb = side === Side.Support ? 'supported' : 'challenged';
     const formattedAmount = formatUSDC(amountBigInt);
-    let publishedCastHash: string | undefined;
 
-    // 1. Open Farcaster composer with comment as a reply to the original cast
+    // 1. Record participant BEFORE opening composer so the OG image fetch sees the data
+    await Promise.all([
+      ...(context?.user?.fid ? [
+        fetch('/api/market-participants', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            postId,
+            fid: context.user.fid,
+            side: sideStr,
+            amount: formattedAmount,
+            comment: comment.trim() || undefined,
+          }),
+        }).catch((err) => console.error('Failed to record participant:', err)),
+      ] : []),
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: sideStr, postId, amount: formattedAmount }),
+      }).catch((err) => console.error('Failed to send notification:', err)),
+    ]);
+
+    // 2. Open Farcaster composer with comment as a reply to the original cast
     if (comment.trim()) {
       const baseUrl = APP_URL || (typeof window !== 'undefined' ? window.location.origin : '');
       const url = new URL(`${baseUrl}/market/${postId}`);
@@ -94,37 +115,14 @@ export function CommitModal({ isOpen, onClose, side, marketAddress, postId, cast
       const text = `${comment.trim()}\n\n[${sideVerb} with $${formattedAmount}]`;
 
       try {
-        const result = await actions.composeCast({
+        await actions.composeCast({
           text,
           embeds: [marketUrl] as [string],
           ...(parentCastHash ? { parent: { type: 'cast' as const, hash: parentCastHash } } : {}),
         });
-        publishedCastHash = result?.cast?.hash;
       } catch (err) {
         console.error('Cast composer dismissed or failed:', err);
       }
-    }
-
-    // 2. Fire-and-forget: notify + record participant (parallel)
-    fetch('/api/notify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: sideStr, postId, amount: formattedAmount }),
-    }).catch((err) => console.error('Failed to send notification:', err));
-
-    if (context?.user?.fid) {
-      fetch('/api/market-participants', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          postId,
-          fid: context.user.fid,
-          side: sideStr,
-          amount: formattedAmount,
-          comment: comment.trim() || undefined,
-          commentCastHash: publishedCastHash,
-        }),
-      }).catch((err) => console.error('Failed to record participant:', err));
     }
   }
 

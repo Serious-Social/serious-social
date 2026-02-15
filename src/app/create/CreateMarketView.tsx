@@ -206,26 +206,39 @@ export function CreateMarketView() {
 
     const sideStr = selectedSide === Side.Support ? 'support' : 'challenge';
     const formattedAmount = formatUSDC(amountBigInt);
-    let publishedCastHash: string | undefined;
 
-    // Store the cast mapping for later retrieval
-    fetch('/api/cast-mapping', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        postId,
-        castHash: selectedCast.hash,
-        authorFid: selectedCast.author.fid,
-        text: selectedCast.text,
-        authorUsername: selectedCast.author.username,
-        authorDisplayName: selectedCast.author.displayName,
-        authorPfpUrl: selectedCast.author.pfpUrl,
-      }),
-    }).catch(err => {
-      console.error('Failed to store cast mapping:', err);
-    });
+    // 1. Store cast mapping + record participant BEFORE opening composer
+    //    so the OG image fetch sees the data
+    await Promise.all([
+      fetch('/api/cast-mapping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          postId,
+          castHash: selectedCast.hash,
+          authorFid: selectedCast.author.fid,
+          text: selectedCast.text,
+          authorUsername: selectedCast.author.username,
+          authorDisplayName: selectedCast.author.displayName,
+          authorPfpUrl: selectedCast.author.pfpUrl,
+        }),
+      }).catch(err => console.error('Failed to store cast mapping:', err)),
+      ...(context?.user?.fid ? [
+        fetch('/api/market-participants', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            postId,
+            fid: context.user.fid,
+            side: sideStr,
+            amount: formattedAmount,
+            comment: comment.trim() || undefined,
+          }),
+        }).catch((err) => console.error('Failed to record participant:', err)),
+      ] : []),
+    ]);
 
-    // Publish comment via Farcaster composer (for challenges with a comment)
+    // 2. Open Farcaster composer (for challenges with a comment)
     if (comment.trim()) {
       const sideVerb = selectedSide === Side.Support ? 'supported' : 'challenged';
       const baseUrl = APP_URL || (typeof window !== 'undefined' ? window.location.origin : '');
@@ -236,38 +249,22 @@ export function CreateMarketView() {
       const text = `${comment.trim()}\n\n[${sideVerb} with $${formattedAmount}]`;
 
       try {
-        const result = await actions.composeCast({
+        await actions.composeCast({
           text,
           embeds: [marketUrl] as [string],
           parent: { type: 'cast' as const, hash: selectedCast.hash },
         });
-        publishedCastHash = result?.cast?.hash;
       } catch (err) {
         console.error('Cast composer dismissed or failed:', err);
       }
     }
 
-    // Fire-and-forget: notify + record participant
+    // 3. Fire-and-forget: notify
     fetch('/api/notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: sideStr, postId, amount: formattedAmount }),
     }).catch((err) => console.error('Failed to send notification:', err));
-
-    if (context?.user?.fid) {
-      fetch('/api/market-participants', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          postId,
-          fid: context.user.fid,
-          side: sideStr,
-          amount: formattedAmount,
-          comment: comment.trim() || undefined,
-          commentCastHash: publishedCastHash,
-        }),
-      }).catch((err) => console.error('Failed to record participant:', err));
-    }
 
     refetchMarket();
     setStep('success');
