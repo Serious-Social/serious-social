@@ -459,8 +459,8 @@ export function CreateMarketView() {
                   value={castUrl}
                   onChange={(e) => setCastUrl(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleUrlLookup(); }}
-                  placeholder="Paste a Warpcast URL or cast hash..."
-                  aria-label="Warpcast URL or cast hash"
+                  placeholder="Paste a Farcaster URL or cast hash..."
+                  aria-label="Farcaster URL or cast hash"
                   className="flex-1 px-3 py-2 border border-theme-border bg-theme-bg rounded-lg focus:ring-2 focus:ring-theme-primary focus:border-transparent outline-none text-theme-text placeholder-theme-text-muted text-sm"
                 />
                 <button

@@ -29,9 +29,10 @@ export async function GET(request: NextRequest) {
   if (url) {
     try {
       const parsed = new URL(url);
-      if (parsed.hostname !== 'warpcast.com' && parsed.hostname !== 'www.warpcast.com') {
+      const validHosts = ['warpcast.com', 'www.warpcast.com', 'farcaster.xyz', 'www.farcaster.xyz'];
+      if (!validHosts.includes(parsed.hostname)) {
         return NextResponse.json(
-          { error: 'Only Warpcast URLs are supported' },
+          { error: 'Only Warpcast or Farcaster URLs are supported' },
           { status: 400 }
         );
       }
