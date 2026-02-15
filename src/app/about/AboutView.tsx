@@ -10,7 +10,8 @@ export function AboutView() {
   const { data: defaultParams } = useDefaultParams();
 
   const lockPeriodLabel = defaultParams ? formatLockPeriod(defaultParams.lockPeriod) : "30 days";
-  const penaltyLabel = defaultParams ? formatBps(defaultParams.earlyWithdrawPenaltyBps) : "5%";
+  const penaltyLabel = defaultParams ? formatBps(defaultParams.earlyWithdrawPenaltyBps) : "15%";
+  const premiumLabel = defaultParams ? formatBps(defaultParams.authorPremiumBps) : "10%";
 
   return (
     <div className="px-4 py-4 space-y-4 max-w-lg mx-auto bg-white min-h-screen">
@@ -56,18 +57,47 @@ export function AboutView() {
             <strong>Stake USDC</strong> to support or challenge a claim.
           </li>
           <li>
-            Principal is <strong>committed for {lockPeriodLabel}</strong>. You can
-            withdraw early with a <strong>{penaltyLabel} penalty</strong> (added to the
-            reward pool), or wait for the full period to withdraw penalty-free.
+            Principal is <strong>committed for {lockPeriodLabel}</strong>. After
+            the lock period, withdraw your full principal + earned rewards.
+            Withdraw early and you pay a <strong>{penaltyLabel} penalty</strong> on
+            your principal and <strong>forfeit all pending rewards</strong>.
           </li>
           <li>
-            Signal is <strong>time-weighted</strong> &mdash; it grows the longer
-            your capital stays staked. Flash moves are dampened.
+            Signal is <strong>time-weighted</strong> &mdash; your reward share
+            grows with stake size and time held. A $50 stake held 20 days earns
+            the same as $100 held 10 days. Early believers earn most.
+          </li>
+          <li>
+            <strong>Both sides earn from the same pool.</strong> Rewards are
+            side-agnostic &mdash; it doesn&apos;t matter whether you support or
+            challenge. Only how much you staked and how long you stayed.
           </li>
           <li>
             The <strong>belief curve</strong> answers: &ldquo;Where has capital
             sat long enough to count?&rdquo; It reflects durable conviction, not
             momentary spikes.
+          </li>
+        </ul>
+      </section>
+
+      {/* Reward pool */}
+      <section className="bg-white rounded-xl p-4 shadow-sm space-y-2">
+        <h2 className="text-base font-semibold text-gray-900">
+          How the reward pool is funded
+        </h2>
+        <ul className="text-sm text-gray-700 list-disc pl-5 space-y-1">
+          <li>
+            <strong>Creator premium ({premiumLabel})</strong> &mdash; deducted
+            from the creator&apos;s initial stake when opening a market.
+          </li>
+          <li>
+            <strong>Late entry fees (1&ndash;7.5%)</strong> &mdash; a sliding
+            fee that increases as more capital enters the market. Early
+            participants pay less.
+          </li>
+          <li>
+            <strong>Early withdrawal penalties ({penaltyLabel})</strong> &mdash;
+            paid by anyone who exits before the lock period ends.
           </li>
         </ul>
       </section>
@@ -84,8 +114,8 @@ export function AboutView() {
           </li>
           <li>
             <strong>Non-zero-sum by default</strong> &mdash; No forced transfer
-            of principal. Rewards come from bounded fees, not others&rsquo;
-            losses.
+            of principal between sides. Both sides earn from the same shared
+            reward pool, funded by fees &mdash; not others&rsquo; losses.
           </li>
           <li>
             <strong>Time &gt; Volatility</strong> &mdash; Signal is created by{" "}
