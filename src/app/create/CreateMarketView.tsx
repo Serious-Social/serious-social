@@ -262,12 +262,14 @@ export function CreateMarketView() {
       }
     }
 
-    // 3. Fire-and-forget: notify
-    fetch('/api/notify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: sideStr, postId, amount: formattedAmount }),
-    }).catch((err) => console.error('Failed to send notification:', err));
+    // 3. Fire-and-forget: notify (skip if creating a market on your own cast)
+    if (!isOwnCast) {
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: sideStr, postId, amount: formattedAmount }),
+      }).catch((err) => console.error('Failed to send notification:', err));
+    }
 
     refetchMarket();
     setStep('success');
