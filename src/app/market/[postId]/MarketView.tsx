@@ -385,7 +385,14 @@ export function MarketView({ postId, intent }: MarketViewProps) {
             className="w-full py-3 rounded-xl font-medium bg-theme-primary/20 border-theme-primary/50 text-theme-text hover:bg-theme-primary/30"
             cast={{
               text: castContent
-                ? `"${castContent.text.slice(0, 100)}${castContent.text.length > 100 ? '...' : ''}"\n\nDo you believe this? Put your money where your mouth is.`
+                ? (() => {
+                    const cta = 'Do you believe this? Put your money where your mouth is.';
+                    const maxSnippet = 1024 - cta.length - 8; // 8 for \n\n"..."\n\n
+                    const snippet = castContent.text.length > maxSnippet
+                      ? castContent.text.slice(0, maxSnippet) + '...'
+                      : castContent.text;
+                    return `"${snippet}"\n\n${cta}`;
+                  })()
                 : "Check out this belief market. Put your money where your mouth is.",
               embeds: [{ path: `/market/${postId}` }],
             }}
